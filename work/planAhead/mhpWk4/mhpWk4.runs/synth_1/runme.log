@@ -1,0 +1,252 @@
+
+*** Running xst
+    with args -ifn mojo_top_0.xst -ofn mojo_top_0.srp -intstyle ise
+
+Reading design: mojo_top_0.prj
+
+=========================================================================
+*                          HDL Parsing                                  *
+=========================================================================
+Analyzing Verilog file "/home/jeremyblabla/Dropbox/mojo/mhpWk4/work/planAhead/mhpWk4/mhpWk4.srcs/sources_1/imports/verilog/reset_conditioner_1.v" into library work
+Parsing module <reset_conditioner_1>.
+Analyzing Verilog file "/home/jeremyblabla/Dropbox/mojo/mhpWk4/work/planAhead/mhpWk4/mhpWk4.srcs/sources_1/imports/verilog/myFSM_2.v" into library work
+Parsing module <myFSM_2>.
+Analyzing Verilog file "/home/jeremyblabla/Dropbox/mojo/mhpWk4/work/planAhead/mhpWk4/mhpWk4.srcs/sources_1/imports/verilog/mojo_top_0.v" into library work
+Parsing module <mojo_top_0>.
+
+=========================================================================
+*                            HDL Elaboration                            *
+=========================================================================
+
+Elaborating module <mojo_top_0>.
+
+Elaborating module <reset_conditioner_1>.
+
+Elaborating module <myFSM_2>.
+WARNING:HDLCompiler:413 - "/home/jeremyblabla/Dropbox/mojo/mhpWk4/work/planAhead/mhpWk4/mhpWk4.srcs/sources_1/imports/verilog/mojo_top_0.v" Line 100: Result of 2-bit expression is truncated to fit in 1-bit target.
+WARNING:HDLCompiler:413 - "/home/jeremyblabla/Dropbox/mojo/mhpWk4/work/planAhead/mhpWk4/mhpWk4.srcs/sources_1/imports/verilog/mojo_top_0.v" Line 110: Result of 2-bit expression is truncated to fit in 1-bit target.
+WARNING:HDLCompiler:413 - "/home/jeremyblabla/Dropbox/mojo/mhpWk4/work/planAhead/mhpWk4/mhpWk4.srcs/sources_1/imports/verilog/mojo_top_0.v" Line 113: Result of 3-bit expression is truncated to fit in 1-bit target.
+
+=========================================================================
+*                           HDL Synthesis                               *
+=========================================================================
+
+Synthesizing Unit <mojo_top_0>.
+    Related source file is "/home/jeremyblabla/Dropbox/mojo/mhpWk4/work/planAhead/mhpWk4/mhpWk4.srcs/sources_1/imports/verilog/mojo_top_0.v".
+WARNING:Xst:647 - Input <io_button<0:0>> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+WARNING:Xst:647 - Input <io_button<4:2>> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+WARNING:Xst:647 - Input <io_dip<23:3>> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+WARNING:Xst:647 - Input <cclk> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+WARNING:Xst:647 - Input <spi_ss> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+WARNING:Xst:647 - Input <spi_mosi> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+WARNING:Xst:647 - Input <spi_sck> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+WARNING:Xst:647 - Input <avr_tx> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+WARNING:Xst:647 - Input <avr_rx_busy> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+    Found 1-bit adder for signal <n0094> created at line 89.
+    Found 1-bit adder for signal <n0097> created at line 89.
+    Found 1-bit adder for signal <io_led<8>> created at line 89.
+    Found 1-bit adder for signal <n0103> created at line 90.
+    Found 1-bit adder for signal <n0106> created at line 90.
+    Found 1-bit adder for signal <io_led<16>> created at line 90.
+    Found 1-bit adder for signal <n0112> created at line 121.
+    Found 1-bit adder for signal <n0115> created at line 121.
+    Found 1-bit adder for signal <io_led<15>> created at line 121.
+    Found 1-bit adder for signal <n0121> created at line 122.
+    Found 1-bit adder for signal <n0124> created at line 122.
+    Found 1-bit adder for signal <io_led<23>> created at line 122.
+    Found 1x1-bit multiplier for signal <n0070> created at line 89.
+    Found 1x1-bit multiplier for signal <n0071> created at line 89.
+    Found 1x1-bit multiplier for signal <n0072> created at line 89.
+    Found 1x1-bit multiplier for signal <n0074> created at line 89.
+    Found 1x1-bit multiplier for signal <n0076> created at line 90.
+    Found 1x1-bit multiplier for signal <n0077> created at line 90.
+    Found 1x1-bit multiplier for signal <n0078> created at line 90.
+    Found 1x1-bit multiplier for signal <n0079> created at line 90.
+    Found 1x1-bit multiplier for signal <n0081> created at line 90.
+    Found 1x1-bit multiplier for signal <n0082> created at line 90.
+    Found 1x1-bit multiplier for signal <n0084> created at line 90.
+    Found 1-bit tristate buffer for signal <spi_miso> created at line 71
+    Found 1-bit tristate buffer for signal <spi_channel<3>> created at line 71
+    Found 1-bit tristate buffer for signal <spi_channel<2>> created at line 71
+    Found 1-bit tristate buffer for signal <spi_channel<1>> created at line 71
+    Found 1-bit tristate buffer for signal <spi_channel<0>> created at line 71
+    Found 1-bit tristate buffer for signal <avr_rx> created at line 71
+    Summary:
+	inferred  11 Multiplier(s).
+	inferred  12 Adder/Subtractor(s).
+	inferred  15 Multiplexer(s).
+	inferred   6 Tristate(s).
+Unit <mojo_top_0> synthesized.
+
+Synthesizing Unit <reset_conditioner_1>.
+    Related source file is "/home/jeremyblabla/Dropbox/mojo/mhpWk4/work/planAhead/mhpWk4/mhpWk4.srcs/sources_1/imports/verilog/reset_conditioner_1.v".
+    Found 4-bit register for signal <M_stage_q>.
+    Summary:
+	inferred   4 D-type flip-flop(s).
+Unit <reset_conditioner_1> synthesized.
+
+Synthesizing Unit <myFSM_2>.
+    Related source file is "/home/jeremyblabla/Dropbox/mojo/mhpWk4/work/planAhead/mhpWk4/mhpWk4.srcs/sources_1/imports/verilog/myFSM_2.v".
+    Found 4-bit register for signal <M_state_q>.
+    Found 24-bit register for signal <M_counter_q>.
+    Found finite state machine <FSM_0> for signal <M_state_q>.
+    -----------------------------------------------------------------------
+    | States             | 10                                             |
+    | Transitions        | 26                                             |
+    | Inputs             | 4                                              |
+    | Outputs            | 4                                              |
+    | Clock              | clk (rising_edge)                              |
+    | Reset              | rst (positive)                                 |
+    | Reset type         | synchronous                                    |
+    | Reset State        | 0000                                           |
+    | Power Up State     | 0000                                           |
+    | Encoding           | auto                                           |
+    | Implementation     | LUT                                            |
+    -----------------------------------------------------------------------
+    Found 24-bit adder for signal <M_counter_q[23]_GND_3_o_add_1_OUT> created at line 61.
+    Summary:
+	inferred   1 Adder/Subtractor(s).
+	inferred  24 D-type flip-flop(s).
+	inferred  14 Multiplexer(s).
+	inferred   1 Finite State Machine(s).
+Unit <myFSM_2> synthesized.
+
+=========================================================================
+HDL Synthesis Report
+
+Macro Statistics
+# Multipliers                                          : 11
+ 1x1-bit multiplier                                    : 11
+# Adders/Subtractors                                   : 13
+ 1-bit adder                                           : 12
+ 24-bit adder                                          : 1
+# Registers                                            : 2
+ 24-bit register                                       : 1
+ 4-bit register                                        : 1
+# Multiplexers                                         : 29
+ 1-bit 2-to-1 multiplexer                              : 23
+ 24-bit 2-to-1 multiplexer                             : 6
+# Tristates                                            : 6
+ 1-bit tristate buffer                                 : 6
+# FSMs                                                 : 1
+
+=========================================================================
+
+=========================================================================
+*                       Advanced HDL Synthesis                          *
+=========================================================================
+
+
+Synthesizing (advanced) Unit <mojo_top_0>.
+	Multiplier <Mmult_n0082> in block <mojo_top_0> and adder/subtractor <Madd_io_led<16>_Madd> in block <mojo_top_0> are combined into a MAC<Maddsub_n0082>.
+	Multiplier <Mmult_n0074> in block <mojo_top_0> and adder/subtractor <Madd_io_led<8>_Madd> in block <mojo_top_0> are combined into a MAC<Maddsub_n0074>.
+	Multiplier <Mmult_n0071> in block <mojo_top_0> and adder/subtractor <Madd_n0094> in block <mojo_top_0> are combined into a MAC<Maddsub_n0071>.
+	Multiplier <Mmult_n0077> in block <mojo_top_0> and adder/subtractor <Madd_n0103> in block <mojo_top_0> are combined into a MAC<Maddsub_n0077>.
+Unit <mojo_top_0> synthesized (advanced).
+
+=========================================================================
+Advanced HDL Synthesis Report
+
+Macro Statistics
+# MACs                                                 : 4
+ 1x1-to-1-bit MAC                                      : 4
+# Multipliers                                          : 7
+ 1x1-bit multiplier                                    : 7
+# Adders/Subtractors                                   : 5
+ 1-bit adder                                           : 2
+ 1-bit adder carry in                                  : 2
+ 24-bit adder                                          : 1
+# Registers                                            : 28
+ Flip-Flops                                            : 28
+# Multiplexers                                         : 29
+ 1-bit 2-to-1 multiplexer                              : 23
+ 24-bit 2-to-1 multiplexer                             : 6
+# FSMs                                                 : 1
+
+=========================================================================
+
+=========================================================================
+*                         Low Level Synthesis                           *
+=========================================================================
+Analyzing FSM <MFsm> for best encoding.
+Optimizing FSM <myfsm/FSM_0> on signal <M_state_q[1:4]> with user encoding.
+-------------------
+ State | Encoding
+-------------------
+ 0000  | 0000
+ 0001  | 0001
+ 0010  | 0010
+ 1001  | 1001
+ 0011  | 0011
+ 0100  | 0100
+ 0101  | 0101
+ 0110  | 0110
+ 0111  | 0111
+ 1000  | 1000
+-------------------
+
+Optimizing unit <mojo_top_0> ...
+
+Optimizing unit <myFSM_2> ...
+
+Mapping all equations...
+Building and optimizing final netlist ...
+Found area constraint ratio of 100 (+ 0) on block mojo_top_0, actual ratio is 1.
+FlipFlop myfsm/M_counter_q_23 has been replicated 1 time(s)
+FlipFlop myfsm/M_state_q_FSM_FFd1 has been replicated 2 time(s)
+FlipFlop myfsm/M_state_q_FSM_FFd2 has been replicated 2 time(s)
+FlipFlop myfsm/M_state_q_FSM_FFd3 has been replicated 2 time(s)
+FlipFlop myfsm/M_state_q_FSM_FFd4 has been replicated 1 time(s)
+
+Final Macro Processing ...
+
+Processing Unit <mojo_top_0> :
+INFO:Xst:741 - HDL ADVISOR - A 4-bit shift register was found for signal <reset_cond/M_stage_q_3> and currently occupies 4 logic cells (2 slices). Removing the set/reset logic would take advantage of SRL32 (and derived) primitives and reduce this to 1 logic cells (1 slices). Evaluate if the set/reset can be removed for this simple shift register. The majority of simple pipeline structures do not need to be set/reset operationally.
+Unit <mojo_top_0> processed.
+
+=========================================================================
+Final Register Report
+
+Macro Statistics
+# Registers                                            : 40
+ Flip-Flops                                            : 40
+
+=========================================================================
+
+=========================================================================
+*                           Partition Report                            *
+=========================================================================
+
+Partition Implementation Status
+-------------------------------
+
+  No Partitions were found in this design.
+
+-------------------------------
+
+=========================================================================
+*                            Design Summary                             *
+=========================================================================
+
+Clock Information:
+------------------
+-----------------------------------+------------------------+-------+
+Clock Signal                       | Clock buffer(FF name)  | Load  |
+-----------------------------------+------------------------+-------+
+clk                                | BUFGP                  | 40    |
+-----------------------------------+------------------------+-------+
+
+Asynchronous Control Signals Information:
+----------------------------------------
+No asynchronous control signals found in this design
+
+Timing Summary:
+---------------
+Speed Grade: -2
+
+   Minimum period: 3.404ns (Maximum Frequency: 293.815MHz)
+   Minimum input arrival time before clock: 3.851ns
+   Maximum output required time after clock: 7.919ns
+   Maximum combinational path delay: 17.386ns
+
+=========================================================================

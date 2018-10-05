@@ -1,0 +1,126 @@
+module mojo_top (
+    input clk,              // 50MHz clock
+    input rst_n,            // reset button (active low)
+    output led [8],         // 8 user controllable LEDs
+    input cclk,             // configuration clock, AVR ready when high
+    output spi_miso,        // AVR SPI MISO
+    input spi_ss,           // AVR SPI Slave Select
+    input spi_mosi,         // AVR SPI MOSI
+    input spi_sck,          // AVR SPI Clock
+    output spi_channel [4], // AVR general purpose pins (used by default to select ADC channel)
+    input avr_tx,           // AVR TX (FPGA RX)
+    output avr_rx,          // AVR RX (FPGA TX)
+    input avr_rx_busy,      // AVR RX buffer full
+    output io_led [3][8],   // LEDs on IO Shield
+    output io_seg [8],      // 7-segment LEDs on IO Shield
+    output io_sel [4],      // Digit select on IO Shield
+    input io_button [5],    // 5 buttons on IO Shield
+    input io_dip [3][8],     // DIP switches on IO Shield
+    output sum,
+    output cout,
+    output sum2,
+    output cout2,
+    input failsum,
+    input failcout
+  ) {
+  
+  sig rst;                  // reset signal
+  
+  .clk(clk) {
+    // The reset conditioner is used to synchronize the reset signal to the FPGA
+    // clock. This ensures the entire FPGA comes out of reset at the same time.
+    reset_conditioner reset_cond;
+    .rst(rst){
+      myFSM myfsm; // instance of FSM
+    }
+  }
+  always {
+    reset_cond.in = ~rst_n; // input raw inverted reset signal
+    rst = reset_cond.out;   // conditioned reset
+    
+    led = 8h00;             // turn LEDs off
+    spi_miso = bz;          // not using SPI
+    spi_channel = bzzzz;    // not using flags
+    avr_rx = bz;            // not using serial port
+    
+    io_led = 3x{{8h00}};    // turn LEDs off
+    io_seg = 8hff;          // turn segments off
+    io_sel = 4hf;           // select no digits
+    
+    //input initialized
+    myfsm.center = io_button[1];
+    myfsm.failsum = ~failsum;      // fail in P22 will show 1 when LOW (aka active high)
+    myfsm.failcout = ~failcout;
+    
+    io_led[0][0] = io_dip[0][0]; // a
+    io_led[0][1] = io_dip[0][1]; // b
+    io_led[0][2] = io_dip[0][2]; // cin
+    
+    sum = !io_dip[0][0]*!io_dip[0][1]*io_dip[0][2]    // this is led output for sum
+         + !io_dip[0][0]*io_dip[0][1]*!io_dip[0][2]
+         + io_dip[0][0]*!io_dip[0][1]*!io_dip[0][2]
+         + io_dip[0][0]*io_dip[0][1]*io_dip[0][2];
+    
+    cout = !io_dip[0][0]*io_dip[0][1]*io_dip[0][2]    // this is led output for cout
+          + io_dip[0][0]*!io_dip[0][1]*io_dip[0][2]
+          + io_dip[0][0]*io_dip[0][1]*!io_dip[0][2]
+          + io_dip[0][0]*io_dip[0][1]*io_dip[0][2];
+    
+    io_led[1][0] = !io_dip[0][0]*!io_dip[0][1]*io_dip[0][2]  // this is io_led display
+                 + !io_dip[0][0]*io_dip[0][1]*!io_dip[0][2]
+                 + io_dip[0][0]*!io_dip[0][1]*!io_dip[0][2]
+                 + io_dip[0][0]*io_dip[0][1]*io_dip[0][2];
+    
+    io_led[2][0] = !io_dip[0][0]*io_dip[0][1]*io_dip[0][2]    // this is io_led display
+                  + io_dip[0][0]*!io_dip[0][1]*io_dip[0][2]
+                  + io_dip[0][0]*io_dip[0][1]*!io_dip[0][2]
+                  + io_dip[0][0]*io_dip[0][1]*io_dip[0][2];
+    
+    
+    
+    sum2 = myfsm.cin + myfsm.b + myfsm.a + myfsm.abc;
+    cout2 = myfsm.bc + myfsm.ac + myfsm.ab + myfsm.abc;
+    
+    if (myfsm.a){
+      io_led[0][7] = myfsm.a;
+    }
+    else {
+      if (myfsm.b){
+        io_led[0][6] = myfsm.b;
+      }
+      else{
+        if (myfsm.ab){
+          io_led[0][6] = 2x{myfsm.ab};
+        }
+        else{
+          if (myfsm.cin) {
+            io_led[0][5] = myfsm.cin;
+          }
+          else {
+            if (myfsm.ac) {
+              io_led[0][7] = myfsm.ac;
+              io_led[0][5] = myfsm.ac;
+            }
+            else {
+              if (myfsm.bc) {
+                io_led[0][5] =2x{myfsm.bc};
+              }
+              else{
+                if (myfsm.abc) {
+                  io_led[0][5] = 3x{myfsm.abc};
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    
+      
+    io_led[1][7] = myfsm.cin + myfsm.b + myfsm.a + myfsm.abc;
+    io_led[2][7] = myfsm.bc + myfsm.ac + myfsm.ab + myfsm.abc;
+    io_led[1][4] = myfsm.blink;
+    
+    
+    }
+  }
