@@ -90,13 +90,11 @@ module mojo_top_0 (
     a = 1'h0;
     b = 1'h0;
     cin = 1'h0;
-    if (M_myFSM_error != 1'h1) begin
-      cin = M_myFSM_cin;
-      b = M_myFSM_b;
-      a = M_myFSM_a;
-    end
-    io_led[0+7-:8] = {4'h8{M_myFSM_a}};
+    cin = M_myFSM_cin;
+    b = M_myFSM_b;
+    a = M_myFSM_a;
+    io_led[16+7-:8] = {4'h8{M_myFSM_a}};
     io_led[8+7-:8] = {4'h8{M_myFSM_b}};
-    io_led[16+7-:8] = {4'h8{M_myFSM_cin}};
+    io_led[0+7-:8] = {4'h8{M_myFSM_cin}};
   end
 endmodule

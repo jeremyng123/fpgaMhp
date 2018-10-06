@@ -42,8 +42,6 @@ module mojo_top (
     reset_cond.in = ~rst_n; // input raw inverted reset signal
     rst = reset_cond.out;   // conditioned reset
     
- //   edge_detector.in = 
-    
     led = 8h00;             // turn LEDs off
     spi_miso = bz;          // not using SPI
     spi_channel = bzzzz;    // not using flags
@@ -54,34 +52,25 @@ module mojo_top (
     io_sel = 4hf;           // select no digits
     
     //input initialized
-    myFSM.up = io_button[0];
-    myFSM.left = io_button[3];
-    myFSM.down =io_button[2];
-    myFSM.sum = sum;
-    myFSM.cout = cout;
-    myFSM.aM = io_dip[0][0];
-    myFSM.bM = io_dip[0][1];
-    myFSM.cinM = io_dip[0][2];
+    myFSM.up = io_button[0];      // initialise Up button
+    myFSM.left = io_button[3];    // initialise Left button
+    myFSM.down =io_button[2];     // initialise Down button
+    myFSM.sum = sum;              // returns 1 when Sum LED is on
+    myFSM.cout = cout;            // returns 1 when Cout LED is on
+    myFSM.aM = io_dip[0][0];      // initialise rightmost dip switch to A switch when manual mode is on
+    myFSM.bM = io_dip[0][1];      // initialise 2nd rightmost dip switch to B switch when manual mode is on
+    myFSM.cinM = io_dip[0][2];    // initialise 3rd rightmost dip switch to Cin switch when manual mode is on
     a = 0;
     b = 0;
     cin = 0;
     
     // assign led with fsm
-    if (myFSM.error != 1){
-      cin = myFSM.cin;
-      b = myFSM.b;
-      a = myFSM.a;
-    } 
+    cin = myFSM.cin;
+    b = myFSM.b;
+    a = myFSM.a;
     // initialize a,b,cin to be connected to FSM a,b,cin
-    io_led[0] = 8x{myFSM.a};
-    io_led[1] = 8x{myFSM.b};
-    io_led[2] = 8x{myFSM.cin};
-    
-    
-    
-    
-    
-    
-    
+    io_led[2] = 8x{myFSM.a};    // LEDs on IO Shield to be lit up when switch A is on
+    io_led[1] = 8x{myFSM.b};    // LEDs on IO Shield to be lit up when switch B is on
+    io_led[0] = 8x{myFSM.cin};  // LEDs on IO Shield to be lit up when switch Cin is on
   }
 }

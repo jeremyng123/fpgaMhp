@@ -27,6 +27,7 @@ Elaborating module <reset_conditioner_1>.
 Elaborating module <myFsm_2>.
 
 Elaborating module <edge_detector_3>.
+WARNING:HDLCompiler:1127 - "/home/jem/Dropbox/mojo/fpga1Badder/work/planAhead/fpga1Badder/fpga1Badder.srcs/sources_1/imports/verilog/mojo_top_0.v" Line 69: Assignment to M_myFSM_error ignored, since the identifier is never used
 
 =========================================================================
 *                           HDL Synthesis                               *
@@ -43,6 +44,7 @@ WARNING:Xst:647 - Input <spi_mosi> is never used. This port will be preserved an
 WARNING:Xst:647 - Input <spi_sck> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
 WARNING:Xst:647 - Input <avr_tx> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
 WARNING:Xst:647 - Input <avr_rx_busy> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+INFO:Xst:3210 - "/home/jem/Dropbox/mojo/fpga1Badder/work/planAhead/fpga1Badder/fpga1Badder.srcs/sources_1/imports/verilog/mojo_top_0.v" line 55: Output port <error> of the instance <myFSM> is unconnected or connected to loadless signal.
     Found 1-bit tristate buffer for signal <spi_miso> created at line 72
     Found 1-bit tristate buffer for signal <spi_channel<3>> created at line 72
     Found 1-bit tristate buffer for signal <spi_channel<2>> created at line 72
@@ -50,7 +52,6 @@ WARNING:Xst:647 - Input <avr_rx_busy> is never used. This port will be preserved
     Found 1-bit tristate buffer for signal <spi_channel<0>> created at line 72
     Found 1-bit tristate buffer for signal <avr_rx> created at line 72
     Summary:
-	inferred   3 Multiplexer(s).
 	inferred   6 Tristate(s).
 Unit <mojo_top_0> synthesized.
 
@@ -63,27 +64,27 @@ Unit <reset_conditioner_1> synthesized.
 
 Synthesizing Unit <myFsm_2>.
     Related source file is "/home/jem/Dropbox/mojo/fpga1Badder/work/planAhead/fpga1Badder/fpga1Badder.srcs/sources_1/imports/verilog/myFsm_2.v".
-    Found 4-bit register for signal <M_state_q>.
-    Found 28-bit register for signal <M_counter_q>.
+    Found 5-bit register for signal <M_state_q>.
+    Found 26-bit register for signal <M_counter_q>.
     Found finite state machine <FSM_0> for signal <M_state_q>.
     -----------------------------------------------------------------------
-    | States             | 11                                             |
-    | Transitions        | 32                                             |
+    | States             | 18                                             |
+    | Transitions        | 69                                             |
     | Inputs             | 6                                              |
-    | Outputs            | 5                                              |
+    | Outputs            | 6                                              |
     | Clock              | clk (rising_edge)                              |
     | Reset              | rst (positive)                                 |
     | Reset type         | synchronous                                    |
-    | Reset State        | 0000                                           |
-    | Power Up State     | 0000                                           |
+    | Reset State        | 00000                                          |
+    | Power Up State     | 00000                                          |
     | Encoding           | auto                                           |
     | Implementation     | LUT                                            |
     -----------------------------------------------------------------------
-    Found 28-bit adder for signal <M_counter_q[27]_GND_3_o_add_0_OUT> created at line 56.
+    Found 26-bit adder for signal <M_counter_q[25]_GND_3_o_add_0_OUT> created at line 63.
     Summary:
 	inferred   1 Adder/Subtractor(s).
-	inferred  28 D-type flip-flop(s).
-	inferred  53 Multiplexer(s).
+	inferred  26 D-type flip-flop(s).
+	inferred  19 Multiplexer(s).
 	inferred   1 Finite State Machine(s).
 Unit <myFsm_2> synthesized.
 
@@ -99,14 +100,14 @@ HDL Synthesis Report
 
 Macro Statistics
 # Adders/Subtractors                                   : 1
- 28-bit adder                                          : 1
+ 26-bit adder                                          : 1
 # Registers                                            : 3
  1-bit register                                        : 1
- 28-bit register                                       : 1
+ 26-bit register                                       : 1
  4-bit register                                        : 1
-# Multiplexers                                         : 56
- 1-bit 2-to-1 multiplexer                              : 38
- 28-bit 2-to-1 multiplexer                             : 18
+# Multiplexers                                         : 19
+ 1-bit 2-to-1 multiplexer                              : 15
+ 26-bit 2-to-1 multiplexer                             : 4
 # Tristates                                            : 6
  1-bit tristate buffer                                 : 6
 # FSMs                                                 : 1
@@ -123,12 +124,12 @@ Advanced HDL Synthesis Report
 
 Macro Statistics
 # Adders/Subtractors                                   : 1
- 28-bit adder                                          : 1
-# Registers                                            : 33
- Flip-Flops                                            : 33
-# Multiplexers                                         : 56
- 1-bit 2-to-1 multiplexer                              : 38
- 28-bit 2-to-1 multiplexer                             : 18
+ 26-bit adder                                          : 1
+# Registers                                            : 31
+ Flip-Flops                                            : 31
+# Multiplexers                                         : 19
+ 1-bit 2-to-1 multiplexer                              : 15
+ 26-bit 2-to-1 multiplexer                             : 4
 # FSMs                                                 : 1
 
 =========================================================================
@@ -137,21 +138,28 @@ Macro Statistics
 *                         Low Level Synthesis                           *
 =========================================================================
 Analyzing FSM <MFsm> for best encoding.
-Optimizing FSM <myFSM/FSM_0> on signal <M_state_q[1:4]> with user encoding.
+Optimizing FSM <myFSM/FSM_0> on signal <M_state_q[1:5]> with user encoding.
 -------------------
  State | Encoding
 -------------------
- 0000  | 0000
- 0001  | 0001
- 0010  | 0010
- 1010  | 1010
- 0011  | 0011
- 0100  | 0100
- 0101  | 0101
- 0110  | 0110
- 0111  | 0111
- 1000  | 1000
- 1001  | 1001
+ 00000 | 00000
+ 00001 | 00001
+ 00010 | 00010
+ 01010 | 01010
+ 00011 | 00011
+ 01011 | 01011
+ 00100 | 00100
+ 01100 | 01100
+ 00101 | 00101
+ 01101 | 01101
+ 00110 | 00110
+ 01110 | 01110
+ 00111 | 00111
+ 01111 | 01111
+ 01000 | 01000
+ 10000 | 10000
+ 01001 | 01001
+ 10001 | 10001
 -------------------
 
 Optimizing unit <mojo_top_0> ...
@@ -160,7 +168,7 @@ Optimizing unit <myFsm_2> ...
 
 Mapping all equations...
 Building and optimizing final netlist ...
-Found area constraint ratio of 100 (+ 0) on block mojo_top_0, actual ratio is 2.
+Found area constraint ratio of 100 (+ 0) on block mojo_top_0, actual ratio is 1.
 
 Final Macro Processing ...
 
@@ -172,8 +180,8 @@ Unit <mojo_top_0> processed.
 Final Register Report
 
 Macro Statistics
-# Registers                                            : 37
- Flip-Flops                                            : 37
+# Registers                                            : 36
+ Flip-Flops                                            : 36
 
 =========================================================================
 
@@ -197,7 +205,7 @@ Clock Information:
 -----------------------------------+------------------------+-------+
 Clock Signal                       | Clock buffer(FF name)  | Load  |
 -----------------------------------+------------------------+-------+
-clk                                | BUFGP                  | 37    |
+clk                                | BUFGP                  | 36    |
 -----------------------------------+------------------------+-------+
 
 Asynchronous Control Signals Information:
@@ -208,9 +216,9 @@ Timing Summary:
 ---------------
 Speed Grade: -2
 
-   Minimum period: 4.538ns (Maximum Frequency: 220.361MHz)
-   Minimum input arrival time before clock: 5.703ns
-   Maximum output required time after clock: 9.616ns
-   Maximum combinational path delay: 9.133ns
+   Minimum period: 4.372ns (Maximum Frequency: 228.728MHz)
+   Minimum input arrival time before clock: 5.411ns
+   Maximum output required time after clock: 7.962ns
+   Maximum combinational path delay: 7.947ns
 
 =========================================================================

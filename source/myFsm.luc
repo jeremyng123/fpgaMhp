@@ -4,187 +4,238 @@ module myFsm (
     input up,   // up button
     input down, // down button
     input left, // left button
-    output a,
-    input aM,
-    output b,
-    input bM,
-    output cin,
-    input cinM,
-    input sum,
-    input cout,
+    output a,   // SWITCH A ON?
+    input aM,   // DIP SWITCH A ON?
+    output b,   // SWITCH B ON?
+    input bM,   // DIP SWITCH B ON?
+    output cin, // SWITCH CIN ON?
+    input cinM, // DIP SWITCH CIN ON?
+    input sum,  // BLUE LED SUM ON?
+    input cout, // GREEN LED COUT ON?
     
     output error // to test for error inputs
   ) {
-  
-  
   .clk(clk) {
-    edge_detector edge_detector(#RISE(1), #FALL(0)); //edge detector to detect rising edge of state_changer
+    edge_detector edge_detector(#RISE(1), #FALL(0)); //edge detector to detect rising edge of state
     .rst(rst) {
-      fsm state = {MANUAL, AUTO, TEST, A, B, AB, CIN, AC, BC, ABC, FAILED};
-      dff counter[28]; // 28 bits flip-flop name counter
+      // ALL POSSIBLE STATES THAT GIVE US DIFFERENT INPUT AND OUTPUT, INCLUSIVE OF ERROR STATES
+      fsm state = {MANUAL, AUTO, TEST, A, B, AB, CIN, AC, BC, ABC, 
+                  ERRORTEST, ERRORA, ERRORB, ERRORAB, ERRORCIN, ERRORAC, ERRORBC, ERRORABC};
+      dff counter[26]; // 26 bits flip-flop; named counter
     }
   }
 
   always {
+    // important default fields
     error = 0;
     a = 0;
     b = 0;
-    cin = 0;    
-    counter.d = counter.q + 1;
-    edge_detector.in = counter.q[27];
+    cin = 0;   
+
+    counter.d = counter.q + 1;         // increase counter perpetually
+    edge_detector.in = counter.q[25];  // edge detector detect rising edge of counter at every 26th bit
     
     case(state.q){
+      
+////////////////////// MODE SELECTOR//////////////////////
       state.MANUAL:
-        counter.d = 0;
+        counter.d = 0; // reset counter
         a = aM;
         b = bM;
         cin = cinM;
-        if (left){
+        if (left){    // pressing left button switches mode to Auto mode
           state.d = state.AUTO;
         }
-        else {
-          state.d = state.MANUAL;
-        }
       state.AUTO:
+        a = counter.q[24]; // create slow blinking lights
+        b = counter.q[24];
+        cin = counter.q[24];
+        if (up){      // pressing up button switches mode to Manual mode
+          state.d = state.MANUAL;
+        }else {
+          if (down){  // pressing down button beings the Automatic Troubleshooting process
+            counter.d = 0;
+            state.d = state.TEST;
+          }
+        }
+        
+////////////////////// OUTPUT STATES//////////////////////
+      state.TEST: // state = 000
+        a = 0;
+        b = 0;
+        cin = 0; 
+        error = 0;
+        if (edge_detector.out){
+          if (sum == 0 && cout == 0){   // both LEDs should not be switched on
+            state.d = state.A;          // proceed to next state
+          }else {
+            state.d = state.ERRORTEST;  // Error in 000 detected
+          }
+        }
+      state.A:    // state = 100
+        a = 1;
+        b = 0;
+        cin = 0;
+        error = 0;
+        if (edge_detector.out){
+          if (sum == 1 && cout == 0){   // Blue Sum LED is on, while the other LED is off
+            state.d = state.B;          // proceed to next state
+          } else {
+              state.d = state.ERRORA;   // Error in 100 detected
+          }
+        }
+      state.B:    // state = 010
+        a = 0;
+        b = 1;
+        cin = 0;
+        error = 0;
+        if (edge_detector.out){
+          if (sum == 1 && cout == 0){  // Blue Sum LED is on, while the other LED is off
+            state.d = state.AB;        // proceed to next state
+          } else {
+              state.d = state.ERRORB;  // Error in 010 detected
+          }
+        }
+      state.AB:   //state = 110
+        a = 1;
+        b = 1;
+        cin = 0;
+        if (edge_detector.out){
+          if (sum == 0 && cout == 1){  // Green Cout LED is on, while the other LED is off
+              state.d = state.CIN;     // proceed to next state
+          } else {
+              state.d = state.ERRORAB; // Error in 110 detected
+          }
+        }
+      state.CIN:  // state = 001
+        a = 0;
+        b = 0;
+        cin = 1;
+        error = 0;
+        if (edge_detector.out){
+          if (sum == 1 && cout == 0){    // Blue Sum LED is on, while the other LED is off
+            state.d = state.AC;          // proceed to next state
+          } else {
+              state.d = state.ERRORCIN;  // Error in 010 detected
+          }
+        }
+      state.AC:   // state = 101
+        a = 1;
+        b = 0;
+        cin = 1;
+        if (edge_detector.out){
+          if (sum == 0 && cout == 1){  // Green Cout LED is on, while the other LED is off
+            state.d = state.BC;        // proceed to next state
+          } else {
+              state.d = state.ERRORAC; // Error in 101 detected
+          }
+        }
+      state.BC:  // state = 011
+        a = 0;
+        b = 1;
+        cin = 1;
+        error = 0;
+        if (edge_detector.out){
+          if (sum == 0 && cout == 1){  // Green Cout LED is on, while the other LED is off
+            state.d = state.ABC;       // proceed to next state
+          } else {
+              state.d = state.ERRORBC; // Error in 011 detected
+          }
+        }
+      state.ABC: // state = 111
+        a = 1;
+        b = 1;
+        cin = 1;
+        error = 0;
+        if (edge_detector.out){
+          if (sum == 1 && cout == 1){  // Both Green Cout and Blue Sum LED is on
+            state.d = state.AUTO;      // proceed to next state
+          }else {
+              state.d = state.ERRORABC;// Error in 111 detected
+          }
+        }
+
+////////////////////// ERROR OUTPUT STATES//////////////////////
+      state.ERRORTEST:
+        a = counter.q[21];
+        b = counter.q[21];
+        cin = counter.q[21];
+        error = 1;
+        if (edge_detector.out){        
+          if (sum == 0 && cout == 0){  // real-time error-fix checker
+            state.d = state.A;
+          }
+        }
+      state.ERRORA:
+        a = counter.q[23];
+        b = 0;
+        cin = 0;
+        error = 1;
+        if (edge_detector.out){
+          if (sum == 1 && cout == 0){  // real-time error-fix checker
+            state.d = state.B;
+          }
+        }
+      state.ERRORB:
+        a = 0;
+        b = counter.q[23];
+        cin = 0;
+        error = 1;
+        if (edge_detector.out){
+          if (sum == 1 && cout == 0){  // real-time error-fix checker
+            state.d = state.AB;
+          }
+        }
+      state.ERRORAB:
+        a = counter.q[23];
+        b = counter.q[23];
+        cin = 0;
+        error = 1;
+        if (edge_detector.out){
+          if (sum == 0 && cout == 1){  // real-time error-fix checker
+            state.d = state.CIN;
+          }
+        }
+      state.ERRORCIN:
+        a = 0;
+        b = 0;
+        cin = counter.q[23];
+        error = 1;
+        if (edge_detector.out){
+          if (sum == 1 && cout == 0){  // real-time error-fix checker
+            state.d = state.AC;
+          }
+        }
+      state.ERRORAC:
+        a = counter.q[23];
+        b = 0;
+        cin = counter.q[23];
+        error = 1;
+        if (edge_detector.out){
+          if (sum == 0 && cout == 1){  // real-time error-fix checker
+            state.d = state.BC;
+          }
+        }
+      state.ERRORBC:
+        a = counter.q[23];
+        b = counter.q[23];
+        cin = 0;
+        error = 1;
+        if (edge_detector.out){
+          if (sum == 0 && cout == 1){  // real-time error-fix checker
+            state.d = state.ABC;
+          }
+        }
+      state.ERRORABC:
         a = counter.q[23];
         b = counter.q[23];
         cin = counter.q[23];
-        if (up){
-          state.d = state.MANUAL;
-        }else {
-          if (down){
-            counter.d = 0;
-            state.d = state.TEST;
-          }else {
-            state.d = state.AUTO;
-          }
-        }
-      state.FAILED:
         error = 1;
-        if (left){
-          state.d = state.TEST;
-        }else {
-          if (up){
-            state.d = state.MANUAL;
-          }else {
-            state.d = state.FAILED;
-          }
-        }
-      
-      state.TEST:
         if (edge_detector.out){
-          counter.d = 0;
-          
-          if (sum == 0 && cout == 0){   
-            a = 1;
-            b = 0;
-            cin = 0; 
-            state.d = state.A;   
-          }else {
-          state.d = state.FAILED;
+          if (sum == 1 && cout == 1){  // real-time error-fix checker
+            state.d = state.TEST;
           }
-        }else {
-          state.d = state.TEST;
-        }
-        
-      state.A:
-        if (edge_detector.out){
-          if (sum == 0){
-            state.d = state.FAILED;
-          } else {
-              counter.d = 0;
-              a = 0;
-              b = 1;
-              cin = 0;
-              state.d = state.B;
-          }
-        } else {
-            state.d = state.A;
-        }
-      state.B:
-        if (edge_detector.out){
-          if (sum == 0){
-          state.d = state.FAILED;
-          } else {
-            counter.d = 0;
-            a = 1;
-            b = 1;
-            cin = 0;
-            state.d = state.AB;
-          }
-        } else {
-          state.d = state.B;
-        }
-      state.AB:
-        if (edge_detector.out){
-          if (cout == 0){
-          state.d = state.FAILED;
-          } else {
-            counter.d = 0;
-            a = 0;
-            b = 0;
-            cin = 1;
-            state.d = state.CIN;
-          }
-        } else {
-          state.d = state.AB;
-        }
-      state.CIN:
-        if (edge_detector.out){
-          if (sum == 0){
-          state.d = state.FAILED;
-          } else {
-            counter.d = 0;
-            a = 1;
-            b = 0;
-            cin = 1;
-            state.d = state.AC;
-          }
-        } else {
-          state.d = state.CIN;
-        }
-      state.AC:
-        if (edge_detector.out){
-          if (cout == 0){
-          state.d = state.FAILED;
-          } else {
-            counter.d = 0;
-
-            a = 0;
-            b = 1;
-            cin = 1;
-            state.d = state.BC;
-          }
-        } else {
-          state.d = state.AC;
-        }
-      state.BC:
-        if (edge_detector.out){
-          if (cout == 0){
-          state.d = state.FAILED;
-          } else {
-            counter.d = 0;
-            a = 1;
-            b = 1;
-            cin = 1;
-            state.d = state.ABC;
-          }
-        } else {
-          state.d = state.BC;
-        }
-      state.ABC:
-        if (edge_detector.out){
-          counter.d = 0;
-          a = 0;
-          b = 0;
-          cin = 0;
-          state.d = state.AUTO;
-
-        } else {
-          state.d = state.ABC;
         }
     }
-    
-    
   }
 }

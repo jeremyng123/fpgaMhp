@@ -30,20 +30,27 @@ module myFsm_2 (
     .in(M_edge_detector_in),
     .out(M_edge_detector_out)
   );
-  localparam MANUAL_state = 4'd0;
-  localparam AUTO_state = 4'd1;
-  localparam TEST_state = 4'd2;
-  localparam A_state = 4'd3;
-  localparam B_state = 4'd4;
-  localparam AB_state = 4'd5;
-  localparam CIN_state = 4'd6;
-  localparam AC_state = 4'd7;
-  localparam BC_state = 4'd8;
-  localparam ABC_state = 4'd9;
-  localparam FAILED_state = 4'd10;
+  localparam MANUAL_state = 5'd0;
+  localparam AUTO_state = 5'd1;
+  localparam TEST_state = 5'd2;
+  localparam A_state = 5'd3;
+  localparam B_state = 5'd4;
+  localparam AB_state = 5'd5;
+  localparam CIN_state = 5'd6;
+  localparam AC_state = 5'd7;
+  localparam BC_state = 5'd8;
+  localparam ABC_state = 5'd9;
+  localparam ERRORTEST_state = 5'd10;
+  localparam ERRORA_state = 5'd11;
+  localparam ERRORB_state = 5'd12;
+  localparam ERRORAB_state = 5'd13;
+  localparam ERRORCIN_state = 5'd14;
+  localparam ERRORAC_state = 5'd15;
+  localparam ERRORBC_state = 5'd16;
+  localparam ERRORABC_state = 5'd17;
   
-  reg [3:0] M_state_d, M_state_q = MANUAL_state;
-  reg [27:0] M_counter_d, M_counter_q = 1'h0;
+  reg [4:0] M_state_d, M_state_q = MANUAL_state;
+  reg [25:0] M_counter_d, M_counter_q = 1'h0;
   
   always @* begin
     M_state_d = M_state_q;
@@ -54,7 +61,7 @@ module myFsm_2 (
     b = 1'h0;
     cin = 1'h0;
     M_counter_d = M_counter_q + 1'h1;
-    M_edge_detector_in = M_counter_q[27+0-:1];
+    M_edge_detector_in = M_counter_q[25+0-:1];
     
     case (M_state_q)
       MANUAL_state: begin
@@ -64,151 +71,209 @@ module myFsm_2 (
         cin = cinM;
         if (left) begin
           M_state_d = AUTO_state;
-        end else begin
-          M_state_d = MANUAL_state;
         end
       end
       AUTO_state: begin
-        a = M_counter_q[23+0-:1];
-        b = M_counter_q[23+0-:1];
-        cin = M_counter_q[23+0-:1];
+        a = M_counter_q[24+0-:1];
+        b = M_counter_q[24+0-:1];
+        cin = M_counter_q[24+0-:1];
         if (up) begin
           M_state_d = MANUAL_state;
         end else begin
           if (down) begin
             M_counter_d = 1'h0;
             M_state_d = TEST_state;
-          end else begin
-            M_state_d = AUTO_state;
-          end
-        end
-      end
-      FAILED_state: begin
-        error = 1'h1;
-        if (left) begin
-          M_state_d = TEST_state;
-        end else begin
-          if (up) begin
-            M_state_d = MANUAL_state;
-          end else begin
-            M_state_d = FAILED_state;
           end
         end
       end
       TEST_state: begin
+        a = 1'h0;
+        b = 1'h0;
+        cin = 1'h0;
+        error = 1'h0;
         if (M_edge_detector_out) begin
-          M_counter_d = 1'h0;
           if (sum == 1'h0 && cout == 1'h0) begin
-            a = 1'h1;
-            b = 1'h0;
-            cin = 1'h0;
             M_state_d = A_state;
           end else begin
-            M_state_d = FAILED_state;
+            M_state_d = ERRORTEST_state;
           end
-        end else begin
-          M_state_d = TEST_state;
         end
       end
       A_state: begin
+        a = 1'h1;
+        b = 1'h0;
+        cin = 1'h0;
+        error = 1'h0;
         if (M_edge_detector_out) begin
-          if (sum == 1'h0) begin
-            M_state_d = FAILED_state;
-          end else begin
-            M_counter_d = 1'h0;
-            a = 1'h0;
-            b = 1'h1;
-            cin = 1'h0;
+          if (sum == 1'h1 && cout == 1'h0) begin
             M_state_d = B_state;
+          end else begin
+            M_state_d = ERRORA_state;
           end
-        end else begin
-          M_state_d = A_state;
         end
       end
       B_state: begin
+        a = 1'h0;
+        b = 1'h1;
+        cin = 1'h0;
+        error = 1'h0;
         if (M_edge_detector_out) begin
-          if (sum == 1'h0) begin
-            M_state_d = FAILED_state;
-          end else begin
-            M_counter_d = 1'h0;
-            a = 1'h1;
-            b = 1'h1;
-            cin = 1'h0;
+          if (sum == 1'h1 && cout == 1'h0) begin
             M_state_d = AB_state;
+          end else begin
+            M_state_d = ERRORB_state;
           end
-        end else begin
-          M_state_d = B_state;
         end
       end
       AB_state: begin
+        a = 1'h1;
+        b = 1'h1;
+        cin = 1'h0;
         if (M_edge_detector_out) begin
-          if (cout == 1'h0) begin
-            M_state_d = FAILED_state;
-          end else begin
-            M_counter_d = 1'h0;
-            a = 1'h0;
-            b = 1'h0;
-            cin = 1'h1;
+          if (sum == 1'h0 && cout == 1'h1) begin
             M_state_d = CIN_state;
+          end else begin
+            M_state_d = ERRORAB_state;
           end
-        end else begin
-          M_state_d = AB_state;
         end
       end
       CIN_state: begin
+        a = 1'h0;
+        b = 1'h0;
+        cin = 1'h1;
+        error = 1'h0;
         if (M_edge_detector_out) begin
-          if (sum == 1'h0) begin
-            M_state_d = FAILED_state;
-          end else begin
-            M_counter_d = 1'h0;
-            a = 1'h1;
-            b = 1'h0;
-            cin = 1'h1;
+          if (sum == 1'h1 && cout == 1'h0) begin
             M_state_d = AC_state;
+          end else begin
+            M_state_d = ERRORCIN_state;
           end
-        end else begin
-          M_state_d = CIN_state;
         end
       end
       AC_state: begin
+        a = 1'h1;
+        b = 1'h0;
+        cin = 1'h1;
         if (M_edge_detector_out) begin
-          if (cout == 1'h0) begin
-            M_state_d = FAILED_state;
-          end else begin
-            M_counter_d = 1'h0;
-            a = 1'h0;
-            b = 1'h1;
-            cin = 1'h1;
+          if (sum == 1'h0 && cout == 1'h1) begin
             M_state_d = BC_state;
+          end else begin
+            M_state_d = ERRORAC_state;
           end
-        end else begin
-          M_state_d = AC_state;
         end
       end
       BC_state: begin
+        a = 1'h0;
+        b = 1'h1;
+        cin = 1'h1;
+        error = 1'h0;
         if (M_edge_detector_out) begin
-          if (cout == 1'h0) begin
-            M_state_d = FAILED_state;
-          end else begin
-            M_counter_d = 1'h0;
-            a = 1'h1;
-            b = 1'h1;
-            cin = 1'h1;
+          if (sum == 1'h0 && cout == 1'h1) begin
             M_state_d = ABC_state;
+          end else begin
+            M_state_d = ERRORBC_state;
           end
-        end else begin
-          M_state_d = BC_state;
         end
       end
       ABC_state: begin
+        a = 1'h1;
+        b = 1'h1;
+        cin = 1'h1;
+        error = 1'h0;
         if (M_edge_detector_out) begin
-          M_counter_d = 1'h0;
-          a = 1'h0;
-          b = 1'h0;
-          cin = 1'h0;
-          M_state_d = AUTO_state;
-        end else begin
-          M_state_d = ABC_state;
+          if (sum == 1'h1 && cout == 1'h1) begin
+            M_state_d = AUTO_state;
+          end else begin
+            M_state_d = ERRORABC_state;
+          end
+        end
+      end
+      ERRORTEST_state: begin
+        a = M_counter_q[21+0-:1];
+        b = M_counter_q[21+0-:1];
+        cin = M_counter_q[21+0-:1];
+        error = 1'h1;
+        if (M_edge_detector_out) begin
+          if (sum == 1'h0 && cout == 1'h0) begin
+            M_state_d = A_state;
+          end
+        end
+      end
+      ERRORA_state: begin
+        a = M_counter_q[23+0-:1];
+        b = 1'h0;
+        cin = 1'h0;
+        error = 1'h1;
+        if (M_edge_detector_out) begin
+          if (sum == 1'h1 && cout == 1'h0) begin
+            M_state_d = B_state;
+          end
+        end
+      end
+      ERRORB_state: begin
+        a = 1'h0;
+        b = M_counter_q[23+0-:1];
+        cin = 1'h0;
+        error = 1'h1;
+        if (M_edge_detector_out) begin
+          if (sum == 1'h1 && cout == 1'h0) begin
+            M_state_d = AB_state;
+          end
+        end
+      end
+      ERRORAB_state: begin
+        a = M_counter_q[23+0-:1];
+        b = M_counter_q[23+0-:1];
+        cin = 1'h0;
+        error = 1'h1;
+        if (M_edge_detector_out) begin
+          if (sum == 1'h0 && cout == 1'h1) begin
+            M_state_d = CIN_state;
+          end
+        end
+      end
+      ERRORCIN_state: begin
+        a = 1'h0;
+        b = 1'h0;
+        cin = M_counter_q[23+0-:1];
+        error = 1'h1;
+        if (M_edge_detector_out) begin
+          if (sum == 1'h1 && cout == 1'h0) begin
+            M_state_d = AC_state;
+          end
+        end
+      end
+      ERRORAC_state: begin
+        a = M_counter_q[23+0-:1];
+        b = 1'h0;
+        cin = M_counter_q[23+0-:1];
+        error = 1'h1;
+        if (M_edge_detector_out) begin
+          if (sum == 1'h0 && cout == 1'h1) begin
+            M_state_d = BC_state;
+          end
+        end
+      end
+      ERRORBC_state: begin
+        a = M_counter_q[23+0-:1];
+        b = M_counter_q[23+0-:1];
+        cin = 1'h0;
+        error = 1'h1;
+        if (M_edge_detector_out) begin
+          if (sum == 1'h0 && cout == 1'h1) begin
+            M_state_d = ABC_state;
+          end
+        end
+      end
+      ERRORABC_state: begin
+        a = M_counter_q[23+0-:1];
+        b = M_counter_q[23+0-:1];
+        cin = M_counter_q[23+0-:1];
+        error = 1'h1;
+        if (M_edge_detector_out) begin
+          if (sum == 1'h1 && cout == 1'h1) begin
+            M_state_d = TEST_state;
+          end
         end
       end
     endcase

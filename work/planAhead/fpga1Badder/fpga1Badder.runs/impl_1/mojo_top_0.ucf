@@ -8,6 +8,7 @@
 # Constraints from file : 'io_values.ucf'
 ####################################################################################
 
+// output variables
 NET "a" LOC = P140;
 NET "a" IOSTANDARD = LVTTL;
 NET "b" LOC = P138;
@@ -15,6 +16,7 @@ NET "b" IOSTANDARD = LVTTL;
 NET "cin" LOC = P134;
 NET "cin" IOSTANDARD = LVTTL;
 
+// input variables
 NET "sum" LOC = P51;
 NET "sum" IOSTANDARD = LVTTL;
 NET "cout" IO;

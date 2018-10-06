@@ -1,6 +1,8 @@
+// output variables
 NET "a" LOC = P140 | IOSTANDARD = LVTTL;
 NET "b" LOC = P138 | IOSTANDARD = LVTTL;
 NET "cin" LOC = P134 | IOSTANDARD = LVTTL;
 
+// input variables
 NET "sum" LOC = P51 | IOSTANDARD = LVTTL;
 NET "cout" LOC = p41 | IO STANDARD = LVTTL;
