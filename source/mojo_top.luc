@@ -55,22 +55,30 @@ module mojo_top (
     
     //input initialized
     myFSM.up = io_button[0];
-    myFSM.center = io_button[1];
+    myFSM.left = io_button[3];
     myFSM.down =io_button[2];
     myFSM.sum = sum;
     myFSM.cout = cout;
     myFSM.aM = io_dip[0][0];
     myFSM.bM = io_dip[0][1];
     myFSM.cinM = io_dip[0][2];
+    a = 0;
+    b = 0;
+    cin = 0;
     
     // assign led with fsm
-    a = myFSM.a;
-    b = myFSM.b;
-    cin = myFSM.cin;
-    
-    io_led[0] = 8x{myFSM.cin};
+    if (myFSM.error != 1){
+      cin = myFSM.cin;
+      b = myFSM.b;
+      a = myFSM.a;
+    } 
+    // initialize a,b,cin to be connected to FSM a,b,cin
+    io_led[0] = 8x{myFSM.a};
     io_led[1] = 8x{myFSM.b};
-    io_led[2] = 8x{myFSM.a};
+    io_led[2] = 8x{myFSM.cin};
+    
+    
+    
     
     
     

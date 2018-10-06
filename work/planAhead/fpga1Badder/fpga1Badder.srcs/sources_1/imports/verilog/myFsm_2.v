@@ -9,7 +9,7 @@ module myFsm_2 (
     input rst,
     input up,
     input down,
-    input center,
+    input left,
     output reg a,
     input aM,
     output reg b,
@@ -17,11 +17,19 @@ module myFsm_2 (
     output reg cin,
     input cinM,
     input sum,
-    input cout
+    input cout,
+    output reg error
   );
   
   
   
+  wire [1-1:0] M_edge_detector_out;
+  reg [1-1:0] M_edge_detector_in;
+  edge_detector_3 edge_detector (
+    .clk(clk),
+    .in(M_edge_detector_in),
+    .out(M_edge_detector_out)
+  );
   localparam MANUAL_state = 4'd0;
   localparam AUTO_state = 4'd1;
   localparam TEST_state = 4'd2;
@@ -35,17 +43,18 @@ module myFsm_2 (
   localparam FAILED_state = 4'd10;
   
   reg [3:0] M_state_d, M_state_q = MANUAL_state;
-  
   reg [27:0] M_counter_d, M_counter_q = 1'h0;
   
   always @* begin
     M_state_d = M_state_q;
     M_counter_d = M_counter_q;
     
+    error = 1'h0;
     a = 1'h0;
     b = 1'h0;
     cin = 1'h0;
     M_counter_d = M_counter_q + 1'h1;
+    M_edge_detector_in = M_counter_q[27+0-:1];
     
     case (M_state_q)
       MANUAL_state: begin
@@ -53,8 +62,10 @@ module myFsm_2 (
         a = aM;
         b = bM;
         cin = cinM;
-        if (down) begin
+        if (left) begin
           M_state_d = AUTO_state;
+        end else begin
+          M_state_d = MANUAL_state;
         end
       end
       AUTO_state: begin
@@ -64,7 +75,8 @@ module myFsm_2 (
         if (up) begin
           M_state_d = MANUAL_state;
         end else begin
-          if (center) begin
+          if (down) begin
+            M_counter_d = 1'h0;
             M_state_d = TEST_state;
           end else begin
             M_state_d = AUTO_state;
@@ -72,117 +84,131 @@ module myFsm_2 (
         end
       end
       FAILED_state: begin
-        a = M_counter_q[21+0-:1];
-        b = M_counter_q[21+0-:1];
-        cin = M_counter_q[21+0-:1];
-        if (center) begin
+        error = 1'h1;
+        if (left) begin
           M_state_d = TEST_state;
         end else begin
-          M_state_d = FAILED_state;
+          if (up) begin
+            M_state_d = MANUAL_state;
+          end else begin
+            M_state_d = FAILED_state;
+          end
         end
       end
       TEST_state: begin
-        M_counter_d = 1'h0;
-        if (M_counter_q[27+0-:1] == 1'h1) begin
+        if (M_edge_detector_out) begin
           M_counter_d = 1'h0;
-        end
-        if (sum == 1'h0 && cout == 1'h0) begin
-          M_state_d = A_state;
-          a = 1'h1;
+          if (sum == 1'h0 && cout == 1'h0) begin
+            a = 1'h1;
+            b = 1'h0;
+            cin = 1'h0;
+            M_state_d = A_state;
+          end else begin
+            M_state_d = FAILED_state;
+          end
         end else begin
-          M_state_d = FAILED_state;
+          M_state_d = TEST_state;
         end
       end
       A_state: begin
-        if (M_counter_q[27+0-:1] == 1'h1) begin
+        if (M_edge_detector_out) begin
           if (sum == 1'h0) begin
             M_state_d = FAILED_state;
           end else begin
             M_counter_d = 1'h0;
-            M_state_d = B_state;
+            a = 1'h0;
             b = 1'h1;
+            cin = 1'h0;
+            M_state_d = B_state;
           end
         end else begin
           M_state_d = A_state;
         end
       end
       B_state: begin
-        if (M_counter_q[27+0-:1] == 1'h1) begin
+        if (M_edge_detector_out) begin
           if (sum == 1'h0) begin
             M_state_d = FAILED_state;
           end else begin
             M_counter_d = 1'h0;
-            M_state_d = B_state;
             a = 1'h1;
             b = 1'h1;
+            cin = 1'h0;
+            M_state_d = AB_state;
           end
         end else begin
           M_state_d = B_state;
         end
       end
       AB_state: begin
-        if (M_counter_q[27+0-:1] == 1'h1) begin
+        if (M_edge_detector_out) begin
           if (cout == 1'h0) begin
             M_state_d = FAILED_state;
           end else begin
             M_counter_d = 1'h0;
-            M_state_d = CIN_state;
+            a = 1'h0;
+            b = 1'h0;
             cin = 1'h1;
+            M_state_d = CIN_state;
           end
         end else begin
           M_state_d = AB_state;
         end
       end
       CIN_state: begin
-        if (M_counter_q[27+0-:1] == 1'h1) begin
+        if (M_edge_detector_out) begin
           if (sum == 1'h0) begin
             M_state_d = FAILED_state;
           end else begin
             M_counter_d = 1'h0;
-            M_state_d = AC_state;
             a = 1'h1;
+            b = 1'h0;
             cin = 1'h1;
+            M_state_d = AC_state;
           end
         end else begin
           M_state_d = CIN_state;
         end
       end
       AC_state: begin
-        if (M_counter_q[27+0-:1] == 1'h1) begin
+        if (M_edge_detector_out) begin
           if (cout == 1'h0) begin
             M_state_d = FAILED_state;
           end else begin
             M_counter_d = 1'h0;
-            M_state_d = BC_state;
+            a = 1'h0;
             b = 1'h1;
             cin = 1'h1;
+            M_state_d = BC_state;
           end
         end else begin
           M_state_d = AC_state;
         end
       end
       BC_state: begin
-        if (M_counter_q[27+0-:1] == 1'h1) begin
+        if (M_edge_detector_out) begin
           if (cout == 1'h0) begin
             M_state_d = FAILED_state;
           end else begin
             M_counter_d = 1'h0;
-            M_state_d = ABC_state;
             a = 1'h1;
             b = 1'h1;
             cin = 1'h1;
+            M_state_d = ABC_state;
           end
         end else begin
           M_state_d = BC_state;
         end
       end
       ABC_state: begin
-        if (M_counter_q[27+0-:1] == 1'h1) begin
+        if (M_edge_detector_out) begin
           M_counter_d = 1'h0;
-          M_state_d = AUTO_state;
           a = 1'h0;
           b = 1'h0;
           cin = 1'h0;
+          M_state_d = AUTO_state;
+        end else begin
+          M_state_d = ABC_state;
         end
       end
     endcase
@@ -190,18 +216,11 @@ module myFsm_2 (
   
   always @(posedge clk) begin
     if (rst == 1'b1) begin
+      M_counter_q <= 1'h0;
       M_state_q <= 1'h0;
     end else begin
-      M_state_q <= M_state_d;
-    end
-  end
-  
-  
-  always @(posedge clk) begin
-    if (rst == 1'b1) begin
-      M_counter_q <= 1'h0;
-    end else begin
       M_counter_q <= M_counter_d;
+      M_state_q <= M_state_d;
     end
   end
   

@@ -5,7 +5,7 @@ set device xc6slx9-2tqg144
 if {[file exists "$projDir/$projName"]} { file delete -force "$projDir/$projName" }
 create_project $projName "$projDir/$projName" -part $device
 set_property design_mode RTL [get_filesets sources_1]
-set verilogSources [list "/home/jem/Dropbox/mojo/fpga1Badder/work/verilog/mojo_top_0.v" "/home/jem/Dropbox/mojo/fpga1Badder/work/verilog/reset_conditioner_1.v" "/home/jem/Dropbox/mojo/fpga1Badder/work/verilog/myFsm_2.v"]
+set verilogSources [list "/home/jem/Dropbox/mojo/fpga1Badder/work/verilog/mojo_top_0.v" "/home/jem/Dropbox/mojo/fpga1Badder/work/verilog/reset_conditioner_1.v" "/home/jem/Dropbox/mojo/fpga1Badder/work/verilog/myFsm_2.v" "/home/jem/Dropbox/mojo/fpga1Badder/work/verilog/edge_detector_3.v"]
 import_files -fileset [get_filesets sources_1] -force -norecurse $verilogSources
 set ucfSources [list "/home/jem/Dropbox/mojo/fpga1Badder/constraint/io_values.ucf" "/home/jem/Documents/mojo-ide-B1.3.6/library/components/mojo.ucf" "/home/jem/Documents/mojo-ide-B1.3.6/library/components/io_shield.ucf"]
 import_files -fileset [get_filesets constrs_1] -force -norecurse $ucfSources

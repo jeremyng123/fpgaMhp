@@ -43,9 +43,10 @@ module mojo_top_0 (
   wire [1-1:0] M_myFSM_a;
   wire [1-1:0] M_myFSM_b;
   wire [1-1:0] M_myFSM_cin;
+  wire [1-1:0] M_myFSM_error;
   reg [1-1:0] M_myFSM_up;
   reg [1-1:0] M_myFSM_down;
-  reg [1-1:0] M_myFSM_center;
+  reg [1-1:0] M_myFSM_left;
   reg [1-1:0] M_myFSM_aM;
   reg [1-1:0] M_myFSM_bM;
   reg [1-1:0] M_myFSM_cinM;
@@ -56,7 +57,7 @@ module mojo_top_0 (
     .rst(rst),
     .up(M_myFSM_up),
     .down(M_myFSM_down),
-    .center(M_myFSM_center),
+    .left(M_myFSM_left),
     .aM(M_myFSM_aM),
     .bM(M_myFSM_bM),
     .cinM(M_myFSM_cinM),
@@ -64,7 +65,8 @@ module mojo_top_0 (
     .cout(M_myFSM_cout),
     .a(M_myFSM_a),
     .b(M_myFSM_b),
-    .cin(M_myFSM_cin)
+    .cin(M_myFSM_cin),
+    .error(M_myFSM_error)
   );
   
   always @* begin
@@ -78,18 +80,23 @@ module mojo_top_0 (
     io_seg = 8'hff;
     io_sel = 4'hf;
     M_myFSM_up = io_button[0+0-:1];
-    M_myFSM_center = io_button[1+0-:1];
+    M_myFSM_left = io_button[3+0-:1];
     M_myFSM_down = io_button[2+0-:1];
     M_myFSM_sum = sum;
     M_myFSM_cout = cout;
     M_myFSM_aM = io_dip[0+0+0-:1];
     M_myFSM_bM = io_dip[0+1+0-:1];
     M_myFSM_cinM = io_dip[0+2+0-:1];
-    a = M_myFSM_a;
-    b = M_myFSM_b;
-    cin = M_myFSM_cin;
-    io_led[0+7-:8] = {4'h8{M_myFSM_cin}};
+    a = 1'h0;
+    b = 1'h0;
+    cin = 1'h0;
+    if (M_myFSM_error != 1'h1) begin
+      cin = M_myFSM_cin;
+      b = M_myFSM_b;
+      a = M_myFSM_a;
+    end
+    io_led[0+7-:8] = {4'h8{M_myFSM_a}};
     io_led[8+7-:8] = {4'h8{M_myFSM_b}};
-    io_led[16+7-:8] = {4'h8{M_myFSM_a}};
+    io_led[16+7-:8] = {4'h8{M_myFSM_cin}};
   end
 endmodule
