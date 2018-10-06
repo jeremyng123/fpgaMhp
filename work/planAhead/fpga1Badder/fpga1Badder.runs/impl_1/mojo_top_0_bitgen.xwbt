@@ -1,0 +1,8 @@
+INTSTYLE=pa
+INFILE=/home/jem/Dropbox/mojo/fpga1Badder/work/planAhead/fpga1Badder/fpga1Badder.runs/impl_1/mojo_top_0_routed.ncd
+OUTFILE=/home/jem/Dropbox/mojo/fpga1Badder/work/planAhead/fpga1Badder/fpga1Badder.runs/impl_1/mojo_top_0.bit
+FAMILY=Spartan6
+PART=xc6slx9-2tqg144
+WORKINGDIR=/home/jem/Dropbox/mojo/fpga1Badder/work/planAhead/fpga1Badder/fpga1Badder.runs/impl_1
+LICENSE=WebPack
+USER_INFO=211604469_0_0_079

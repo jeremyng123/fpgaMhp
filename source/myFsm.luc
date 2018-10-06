@@ -1,0 +1,165 @@
+module myFsm (
+    input clk,  // clock
+    input rst,  // reset
+    input up,   // up button
+    input down, // down button
+    input center, // center button
+    output a,
+    input aM,
+    output b,
+    input bM,
+    output cin,
+    input cinM,
+    input sum,
+    input cout
+  ) {
+  
+  
+  .clk(clk) {
+    .rst(rst) {
+      fsm state = {MANUAL, AUTO, TEST, A, B, AB, CIN, AC, BC, ABC, FAILED};
+    }
+  }dff counter[28](.clk(clk),.rst(rst)); // 24 bits flip-flop name counter
+
+  always {
+    a = 0;
+    b = 0;
+    cin = 0;    
+    counter.d = counter.q + 1;
+    
+    case(state.q){
+      state.MANUAL:
+        counter.d = 0;
+        a = aM;
+        b = bM;
+        cin = cinM;
+        if (down){
+          state.d = state.AUTO;
+        }
+      state.AUTO:
+        a = counter.q[23];
+        b = counter.q[23];
+        cin = counter.q[23];
+        if (up){
+          state.d = state.MANUAL;
+        }else {
+          if (center){
+            state.d = state.TEST;
+          }else {
+            state.d = state.AUTO;
+          }
+        }
+      state.FAILED:
+        
+        a = counter.q[21]; // most significant bit of counter.q
+        b = counter.q[21]; // most significant bit of counter.q
+        cin = counter.q[21]; // most significant bit of counter.q
+        if (center){
+          state.d = state.TEST;
+        }else {
+          state.d = state.FAILED;
+        }
+      
+      state.TEST:
+        counter.d = 0;
+        if (counter.q[27]==1){
+          counter.d = 0;
+          
+        } if (sum == 0 && cout == 0){   
+            state.d = state.A;
+            a = 1;    
+          }else {
+          state.d = state.FAILED;
+        }
+      state.A:
+        
+        if (counter.q[27] == 1){
+          if (sum == 0){
+          state.d = state.FAILED;
+          } else {
+            counter.d = 0;
+            state.d = state.B;
+            b = 1;
+          }
+        } else {
+          state.d = state.A;
+        }
+      state.B:
+        if (counter.q[27] == 1){
+          if (sum == 0){
+          state.d = state.FAILED;
+          } else {
+            counter.d = 0;
+            state.d = state.B;
+            a = 1;
+            b = 1;
+          }
+        } else {
+          state.d = state.B;
+        }
+      state.AB:
+        if (counter.q[27] == 1){
+          if (cout == 0){
+          state.d = state.FAILED;
+          } else {
+            counter.d = 0;
+            state.d = state.CIN;
+            cin = 1;
+          }
+        } else {
+          state.d = state.AB;
+        }
+      state.CIN:
+        if (counter.q[27] == 1){
+          if (sum == 0){
+          state.d = state.FAILED;
+          } else {
+            counter.d = 0;
+            state.d = state.AC;
+            a = 1;
+            cin = 1;
+          }
+        } else {
+          state.d = state.CIN;
+        }
+      state.AC:
+        if (counter.q[27] == 1){
+          if (cout == 0){
+          state.d = state.FAILED;
+          } else {
+            counter.d = 0;
+            state.d = state.BC;
+            b = 1;
+            cin = 1;
+          }
+        } else {
+          state.d = state.AC;
+        }
+      state.BC:
+        if (counter.q[27] == 1){
+          if (cout == 0){
+          state.d = state.FAILED;
+          } else {
+            counter.d = 0;
+            state.d = state.ABC;
+            a = 1;
+            b = 1;
+            cin = 1;
+          }
+        } else {
+          state.d = state.BC;
+        }
+      state.ABC:
+        if (counter.q[27] == 1){
+          counter.d = 0;
+          state.d = state.AUTO;
+          a = 0;
+          b = 0;
+          cin = 0;
+
+        }
+    }
+    
+    
+  }
+}
