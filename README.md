@@ -10,6 +10,6 @@ Mini Hardware Project ISTD 2018
 
 ## Authors
 - Jeremy (1002642): Mojo code and burning of 2 stripboards :P
-- Danial: Soldering of 1-bit full Adder, Production and Editing of Video
-- Billio: Design and Soldering of 1-bit full Adder
-- Xiang Hao: Creative designer for poster
+- Danial (1002660): Soldering of 1-bit full Adder, Production and Editing of Video
+- Billio(1002939): Design and Soldering of 1-bit full Adder
+- Xiang Hao (1002746): Creative designer for poster
