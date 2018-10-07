@@ -9,7 +9,7 @@ Mini Hardware Project ISTD 2018
 5. Batteries & Battery holder
 
 ## Authors
-- Jeremy (1002642): 
-- Danial
-- Bilio
-- Xiang Hao
+- Jeremy (1002642): Mojo code and burning of 2 stripboards :P
+- Danial: Soldering of 1-bit full Adder, Production and Editing of Video
+- Billio: Design and Soldering of 1-bit full Adder
+- Xiang Hao: Creative designer for poster
