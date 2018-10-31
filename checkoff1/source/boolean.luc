@@ -1,0 +1,29 @@
+module boolean (  
+    //performs AND, OR, XOR, "A" functions
+    input alufn[6], // select add or sub
+    input a[16],  // 16 a inputs
+    input b[16],  // 16 b inputs
+
+    output bool_[16]
+   ){
+
+  always {
+       case (alufn[3:0]) {      // using bitwise operators on A and B
+
+            b1000:
+                bool_ = a & b;   // AND
+                
+            b1110:
+                bool_ = a | b;   // OR
+                
+            b0110:
+                bool_ = a ^ b;   // XOR
+                
+            b1010:
+                bool_ = a;       // "A", gives output A regardless
+  
+            default:
+                bool_ = 16b0;
+        }
+  }
+}
