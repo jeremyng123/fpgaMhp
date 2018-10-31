@@ -1,0 +1,44 @@
+global Arith{
+  const ADD = 2b00;
+  const SUB = 2b01;
+  const MUL = 2b10;
+  const MOD = 2b11;
+}
+
+module adder (
+    input alufn[6], // select add or sub
+    input a[16],  // 16 a inputs
+    input b[16],  // 16 b inputs
+    output z,      // z output --> 
+    output v,
+    output n,
+    output sum_[16]
+  ) {
+  sig sum[16];
+
+  always {
+    case (alufn[1:0]){      // the value that controls whether to add or to subtract
+      Arith.ADD:          // addition
+        sum = a + b;
+      
+      Arith.SUB:          // subtraction
+        sum = a - b;
+        
+      Arith.MUL:          // multiplication
+        sum = a * b;
+        
+      Arith.MOD:          // modular
+        sum = a-(a/b)*b; 
+        
+      default:
+        sum = a + b;                                
+    }
+    
+    //assigning values to outputs
+    sum_ = sum[15:0];
+    z = ~|sum;        // if all 16 bits of sum has a value of 0
+    v = a[15]&b[15]&~sum[15] | ~a[15]&~b[15]&sum[15];    // formula is as given in pdf. to represent overflow
+    n = sum[15];      // if the sum is a negative number
+    
+  }
+}
