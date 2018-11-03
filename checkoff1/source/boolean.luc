@@ -1,3 +1,10 @@
+global Bool {
+  const AND = 4b1000;
+  const OR  = 4b1110;
+  const XOR = 4b0110;
+  const A   = 4b1010;
+}
+
 module boolean (  
     //performs AND, OR, XOR, "A" functions
     input alufn[6], // select add or sub
@@ -6,24 +13,26 @@ module boolean (
 
     output bool_[16]
    ){
+  sig bool[16];
 
   always {
        case (alufn[3:0]) {      // using bitwise operators on A and B
 
-            b1000:
-                bool_ = a & b;   // AND
+            Bool.AND:
+                bool = a & b;   // AND
                 
-            b1110:
-                bool_ = a | b;   // OR
+            Bool.OR:
+                bool = a | b;   // OR
                 
-            b0110:
-                bool_ = a ^ b;   // XOR
+            Bool.XOR:
+                bool = a ^ b;   // XOR
                 
-            b1010:
-                bool_ = a;       // "A", gives output A regardless
+            Bool.A:
+                bool = a;       // "A", gives output A regardless
   
             default:
-                bool_ = 16b0;
+                bool = 16b0;
         }
+    bool_ = bool;
   }
 }

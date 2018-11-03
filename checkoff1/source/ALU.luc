@@ -12,8 +12,7 @@ module alu (
     input b[16],
     input alufn[6],
 
-// initialize the outputs from our ALU
-    output overflow,
+// initialize the outputs from our ALU    
     output result_[16],
     output z,
     output v,
@@ -23,7 +22,9 @@ module alu (
 // initialize the functions found in our ALU
   adder adder_;
   boolean boolean_;
+  shifter shifter_;
   compare compare_;
+
   
   
   always {
@@ -36,31 +37,36 @@ module alu (
     boolean_.a = a;
     boolean_.b = b;
     boolean_.alufn = alufn;
+    
     // assigning inputs to SHIFTER
+    shifter_.a = a;
+    shifter_.b = b;
+    shifter_.alufn = alufn;
     
     // assigning inputs to COMPARE
+    compare_.alufn = alufn;
     compare_.z = adder_.z;
     compare_.v = adder_.v;
     compare_.n = adder_.n;
-    compare_.alufn = alufn;
     
     // creating a makeshift mux4 for our alu functions
     // 
     case(alufn[5:4]){
       Inst.ADDER:
         result_ = adder_.sum_;
+        
       Inst.BOOLEAN:
         result_ = boolean_.bool_;
-//      Inst.SHIFTER:
         
+      Inst.SHIFTER:
+        result_ = shifter_.shift_;
         
       Inst.COMPARE:
         result_ = compare_.cmp_;
       
       default:
         result_ = 16b0;
-    }
-    overflow = adder_.v;
+            }
     z = adder_.z;
     v = adder_.v;
     n = adder_.n;
