@@ -1,0 +1,671 @@
+global Alufn {
+  const ADD = 6b000000;
+  const SUB = 6b000001;
+  const MUL = 6b000010;
+  const MOD = 6b000011;
+  const AND = 6b011000;
+  const OR  = 6b011110;
+  const XOR = 6b010110;
+  const LDR = 6b011010;
+  const SHL = 6b100000;
+  const SHR = 6b100001;
+  const SRA = 6b100011;
+  const CMPEQ = 6b110011;
+  const CMPLT = 6b110101;
+  const CMPLE = 6b110111;
+
+  const CORRECT = 8d100;
+  const WRONG   = 8d50;
+}
+
+module mojo_top (
+    input clk,              // 50MHz clock
+    input rst_n,            // reset button (active low)
+    output led [8],         // 8 user controllable LEDs
+    input cclk,             // configuration clock, AVR ready when high
+    output spi_miso,        // AVR SPI MISO
+    input spi_ss,           // AVR SPI Slave Select
+    input spi_mosi,         // AVR SPI MOSI
+    input spi_sck,          // AVR SPI Clock
+    output spi_channel [4], // AVR general purpose pins (used by default to select ADC channel)
+    input avr_tx,           // AVR TX (FPGA RX)
+    output avr_rx,          // AVR RX (FPGA TX)
+    input avr_rx_busy,      // AVR RX buffer full
+    output io_led [3][8],   // LEDs on IO Shield
+    output io_seg [8],      // 7-segment LEDs on IO Shield
+    output io_sel [4],      // Digit select on IO Shield
+    input io_button [5],    // 5 buttons on IO Shield
+    input io_dip [3][8],     // DIP switches on IO Shield
+
+    input a_[16]            // 16-bit a input that comes from the strip board
+      ) {
+
+  sig rst;                  // reset signal
+
+  .clk(clk) {
+    // The reset conditioner is used to synchronize the reset signal to the FPGA
+    // clock. This ensures the entire FPGA comes out of reset at the same time.
+    reset_conditioner reset_cond;
+    edge_detector edge_detector(#RISE(1), #FALL(0)); //edge detector to detect rising edge of state
+    .rst(rst){
+      dff counter[26]; //counter used to cycle through different states
+      counter ctr (#SIZE(3), #DIV(16));//counter to light up led segments
+
+////////////////////// CREATE FSM FOR ALU TESTING /////////////////////
+      fsm state = {MANUAL, COMPUTE,
+        ADDERSUM1, ADDERSUM1OF, ADDERSUB1, ADDERSUB1OF, ADDERMUL1, ADDERMOD1,
+        BOOLAND, BOOLOR, BOOLXOR, BOOLLDR,
+        CMPEQ1, CMPEQ2, CMPLT1, CMPLT2, CMPLE1, CMPLE2, CMPLE3,
+        SHIFTLEFT, SHIFTRIGHT, SRA,
+        ADDERERROR, BOOLERROR, SHIFTERROR, CMPERROR,
+        DONE};
+    }
+  }
+
+  sig alufn[6];  // mode selector
+  sig a[16];    // 16-bit a input -- used for self-testing case
+  sig b[16];    // 16-bit b input
+  sig result[16];
+  sig result_of[1];  // return a 17 bit result. MSB of this result is used only for overflow test cases
+
+  const T = 25;    // time interval between cases
+
+  seven_seg seg0; // the most right seg
+  seven_seg seg1; // the one left of the most right seg
+  seven_seg seg2; // the one left of the left of the most right seg :)
+  seven_seg seg3; // the left most of the led segments
+////////////////////// INSTANTIATE NECESSARY MODULES /////////////////////
+  alu alu_;
+
+
+  always {
+    reset_cond.in = ~rst_n; // input raw inverted reset signal
+    rst = reset_cond.out;   // conditioned reset
+
+    led = 8h00;             // turn LEDs off
+    spi_miso = bz;          // not using SPI
+    spi_channel = bzzzz;    // not using flags
+    avr_rx = bz;            // not using serial port
+
+    io_led = 3x{{8h00}};    // turn LEDs off
+    io_seg = 8hff;          // turn segments off
+    io_sel = 4hf;           // select no digits
+
+////////////////////// INSTANTIATE NECESSARY IO VALUES /////////////////////
+    a     = a_;                      // sig a will receive its values from the external Stripboard
+    b     = c{io_dip[1],io_dip[0]};  // instantiate sig b with the 2 group of right dip switches
+    alufn = io_dip[2][7-:6];          // assign combination of ALUFN to ALU module (the first group of dip switches on the left)
+
+////////////////////// ASSIGN NECESSARY MODULE ALU VALUES /////////////////////
+    counter.d = counter.q + 1; // the incr of counter is for SELF-TESTING
+    edge_detector.in = counter.q[T]; // edge detector detects rising edge of counter
+    alu_.a = a;
+    alu_.b = b;
+    alu_.alufn = alufn;
+
+
+////////////////////// ASSIGN CONDITIONS FOR LED OUTPUT /////////////////////
+    seg3.char = 5b0110; // display nothing
+    seg2.char = 5b0110; // display nothing
+    seg1.char = 5b0110; // display nothing
+    seg0.char = 5b0110; // display nothing
+
+    case (state.q){
+////////////////////// MANUAL TESTING /////////////////////
+      state.MANUAL:
+
+        io_led[1:0] = io_dip[1:0];
+        io_led[2][7:2] = io_dip[2][7:2];                // first row of LED will reflect the ALUFN order
+
+        if (alufn[5:4] == 2b00) seg0.char = 4b0;        // show 'A' if alufn[5:4] = 00
+        else if (alufn[5:4] == 2b01) seg0.char = 4b1;   // show 'b' if alufn[5:4] = 01
+        else if (alufn[5:4] == 2b10) seg0.char = 4b10;  // show 'S' if alufn[5:4] = 10
+        else if (alufn[5:4] == 2b11) seg0.char = 4b11;  // show 'c' if alufn[5:4] = 11
+
+        if(io_button[3]) state.d = state.COMPUTE;
+        else if (io_button[2]) state.d = state.ADDERSUM1;
+
+      state.COMPUTE:
+        alu_.a = a;
+        alu_.b = b;
+        alu_.alufn = alufn;
+
+        result = alu_.result_;                          // compute the A and B inputs using the ALU operations, depending on the ALUFN combination
+        io_led[1:0] = {result[15-:8], result[7-:8]};    // override previous LED methods. will show the result of the ALU operations on IO Shield LED
+        io_led[2][7:2] = io_dip[2][7:2];
+
+        if (alufn[5:4] == 2b00) seg0.char = 4b0;        // show 'A' if alufn[5:4] = 00
+        else if (alufn[5:4] == 2b01) seg0.char = 4b1;   // show 'b' if alufn[5:4] = 01
+        else if (alufn[5:4] == 2b10) seg0.char = 4b10;  // show 'S' if alufn[5:4] = 10
+        else if (alufn[5:4] == 2b11) seg0.char = 4b11;  // show 'c' if alufn[5:4] = 11
+
+        if(io_button[0]) state.d = state.MANUAL;
+        else if(io_button[2]) state.d = state.ADDERSUM1;
+
+////////////////////// AUTOMATIC SELF-TESTING /////////////////////
+
+      /*
+       * USE Alufn.CORRECT for all the correct test case.
+       * USE Alufn.WRONG to test for the error test cases!
+       */
+
+////////////////////// TEST ADDER MODULE /////////////////////
+      state.ADDERSUM1: // Test Case 1 (Normal sum) a = 100 b = 101 --> a + b = 8d201
+        seg2.char = 5b0;   // display 'A' to represent Adder mode
+        seg1.char = 5d7;   // display '0'
+        seg0.char = 5d8;   // display '1' --> testcase '01'
+        alu_.a = Alufn.CORRECT;    // use correct a input to test
+//        alu_.a = Alufn.WRONG;    // use wrong a (a = 50) input to test
+        alu_.b = 8d101;
+        alu_.alufn = Alufn.ADD;
+        result = alu_.result_;
+        io_led[1:0] = {result[15-:8],result[7-:8]};
+        if (counter.q[T] && result == 8d201) {
+          state.d = state.ADDERSUM1OF;        // success
+          counter.d=0;                // reset counter timing
+        }
+        else if (counter.q[T] && result != 8d201) {
+          state.d = state.ADDERERROR;  // fail
+          counter.d=0;
+        }
+
+      state.ADDERSUM1OF: // Test Case 2 (Overflow sum)
+        /* a =  16b1000000000000000
+           b =  16b1000000000000001
+      result = 17b10000000000000001 = OVERFLOW
+        */
+        seg2.char = 5b0;   // display 'A' to represent Adder mode
+        seg1.char = 5d7;   // display '0'
+        seg0.char = 5d9;   // display '2' --> testcase '02'
+        alu_.a = 16b1000000000000000;
+        alu_.b = 16b1000000000000001;
+        alu_.alufn = Alufn.ADD;
+        result_of = alu_.v;
+        result = alu_.result_;
+        io_led[2][0] = result_of;
+        io_led[1:0] = {result[15-:8],result[7-:8]};
+        // reminder that alu_.v is 1 when there is an overflow
+        if (counter.q[T] && alu_.v) {
+          state.d = state.ADDERSUB1;     // success
+          counter.d=0;
+        }
+        else if (counter.q[T] && !alu_.v) {
+          state.d = state.ADDERERROR;  // fail
+          counter.d=0;
+        }
+
+      state.ADDERSUB1:  // Test Case 3 (Normal subtraction)
+        /* a = Alufn.CORRECT = 100
+           b = 50
+      result = 100 - 50 = 50;
+        */
+        seg2.char = 5b0;   // display 'A' to represent Adder mode
+        seg1.char = 5d7;   // display '0'
+        seg0.char = 5d10;   // display '3' --> testcase '03'
+        alu_.a = Alufn.CORRECT; // a = 100
+        alu_.b = 50;
+        alu_.alufn = Alufn.SUB;  // perform subtraction, where Sub = 6b000001
+        result = alu_.result_;
+        io_led[1:0] = {result[15-:8],result[7-:8]};
+        if (counter.q[T] && result == 8d50) {
+          counter.d=0;
+          state.d = state.ADDERSUB1OF;     // success
+        }
+        else if (counter.q[T] && result != 8d50) {
+          state.d = state.ADDERERROR;  // fail
+          counter.d=0;
+        }
+
+      state.ADDERSUB1OF: // Test Case 4 (Subtraction Overflow)
+        /* a = 16b100000000000000
+           b = 16b000000000000001
+      result = a - b = 17b10111111111111111
+        */
+        seg2.char = 5b0;   // display 'A' to represent Adder mode
+        seg1.char = 5d7;   // display '0'
+        seg0.char = 5d11;   // display '4' --> testcase '04'
+        alu_.a = 16b000000000000001;
+        alu_.b = 16b111111111111111;
+        alu_.alufn = Alufn.SUB;
+        result_of = alu_.v;
+        result = alu_.result_;
+        io_led[2][0] = result_of;
+        io_led[1:0] = {result[15-:8],result[7-:8]};
+        if (counter.q[T] && alu_.v) {
+          state.d = state.ADDERMUL1;         // SUCCESS
+          counter.d=0;
+        }
+        else if (counter.q[T] && !alu_.v) {
+          state.d = state.ADDERERROR;  // fail
+          counter.d=0;
+        }
+
+      state.ADDERMUL1: // Test Case 5 (Normal Multiplication)
+        /* a = 8d7
+           b = 8d13
+      result = a * b = 91
+        */
+        seg2.char = 5b0;   // display 'A' to represent Adder mode
+        seg1.char = 5d7;   // display '0'
+        seg0.char = 5d12;   // display '5' --> testcase '05'
+        alu_.a = 8d7;
+        alu_.b = 8d13;
+        alu_.alufn = Alufn.MUL;
+        result = alu_.result_;
+        io_led[1:0] = {result[15-:8],result[7-:8]};
+        if (counter.q[T] && result == 8d91) {
+          counter.d=0;
+          state.d = state.ADDERMOD1;        // SUCCCESS
+        }
+        else if (counter.q[T] && result != 8d91) {
+          state.d = state.ADDERERROR;  // fail
+          counter.d=0;
+        }
+
+      state.ADDERMOD1: // Test Case 6 (Normal Modular)
+        /* a = 8d123
+           b = 8d31
+      result = 8d30
+        */
+        seg2.char = 5b0;   // display 'A' to represent Adder mode
+        seg1.char = 5d7;   // display '0'
+        seg0.char = 5d13;   // display '6' --> testcase '06'
+        alu_.a = 8d123;
+        alu_.b = 8d31;
+        alu_.alufn = Alufn.MOD;
+        result = alu_.result_;
+        io_led[1:0] = {result[15-:8],result[7-:8]};
+        if (counter.q[T] && result == 8d30) {
+          state.d = state.BOOLAND;          // SUCCESS
+          counter.d=0;
+        }
+
+        else if (counter.q[T] && result != 8d30) {
+          state.d = state.ADDERERROR;  // fail
+          counter.d=0;
+        }
+
+
+////////////////////// END OF ADDER TESTING /////////////////////
+
+////////////////////// BOOLEAN TESTING /////////////////////
+      state.BOOLAND: // Test Case 7 (Boolean AND Operator)
+        /* a = 16b1010010110100101
+           b = 16b1000010001000100
+      result = 16b1000010000000100 < -- a & b
+        */
+        seg2.char = 5b1;   // display 'b' to represent Boolean mode
+        seg1.char = 5d7;   // display '0'
+        seg0.char = 5d14;   // display '7' --> testcase '07'
+        alu_.a = 16b1010010110100101;
+        alu_.b = 16b1000010001000100;
+        alu_.alufn = Alufn.AND;
+        result = alu_.result_;
+        io_led[1:0] = {result[15-:8],result[7-:8]};
+        if (counter.q[T] && result == 16b1000010000000100) {
+          state.d = state.BOOLOR;          // SUCCESS
+          counter.d=0;
+        }
+        else if (counter.q[T] && result != 16b1000010000000100) {
+          state.d = state.BOOLERROR;  // fail
+          counter.d=0;
+        }
+
+      state.BOOLOR: // Test Case 8 (Boolean OR Operator)
+        /* a = 16b1010010110100101
+           b = 16b1000010001000100
+      result = 16b1010010111100101 < -- a | b
+        */
+        seg2.char = 5b1;   // display 'b' to represent Boolean mode
+        seg1.char = 5d7;   // display '0'
+        seg0.char = 5d15;   // display '8' --> testcase '08'
+        alu_.a = 16b1010010110100101;
+        alu_.b = 16b1000010001000100;
+        alu_.alufn = Alufn.OR;
+        result = alu_.result_;
+        io_led[1:0] = {result[15-:8],result[7-:8]};
+        if (counter.q[T] && result == 16b1010010111100101) {
+          state.d = state.BOOLXOR;         // SUCCESS
+          counter.d=0;
+        }
+        else if (counter.q[T] && result != 16b1010010111100101) {
+          state.d = state.BOOLERROR;  // fail
+          counter.d=0;
+        }
+
+      state.BOOLXOR: // Test Case 9 (Boolean XOR Operator)
+        /* a = 16b1010010110100101
+           b = 16b1000010001000100
+      result = 16b0010000111100001 < -- a ^ b
+        */
+        seg2.char = 5b1;   // display 'b' to represent Boolean mode
+        seg1.char = 5d7;   // display '0'
+        seg0.char = 5d16;   // display '9' --> testcase '09'
+        alu_.a = 16b1010010110100101;
+        alu_.b = 16b1000010001000100;
+        alu_.alufn = Alufn.XOR;
+        result = alu_.result_;
+        io_led[1:0] = {result[15-:8],result[7-:8]};
+        if (counter.q[T] && result == 16b0010000111100001) {
+          state.d = state.BOOLLDR;         // SUCCESS
+          counter.d=0;
+        }
+        else if (counter.q[T] && result != 16b0010000111100001) {
+          state.d = state.BOOLERROR;  // fail
+          counter.d=0;
+        }
+
+      state.BOOLLDR: // Test Case 10 (Boolean "A"LDR Operator)
+        /* a = 16b1010010110100101
+           b = 16b1000010001000100
+      result = 16b1010010110100101 < -- a
+        */
+        seg2.char = 5b1;   // display 'b' to represent Boolean mode
+        seg1.char = 5d8;   // display '1'
+        seg0.char = 5d7;   // display '0' --> testcase '10'
+        alu_.a = 16b1010010110100101;
+        alu_.b = 16b1000010001000100;
+        alu_.alufn = Alufn.LDR;
+        result = alu_.result_;
+        io_led[1:0] = {result[15-:8],result[7-:8]};
+        if (counter.q[T] && result == 16b1010010110100101) {
+          counter.d=0;
+          state.d = state.SHIFTLEFT;        // SUCCESS
+        }
+        else if (counter.q[T] && result != 16b1010010110100101) {
+          state.d = state.BOOLERROR;  // fail
+          counter.d=0;
+        }
+
+////////////////////// END OF BOOLEAN TESTING /////////////////////
+
+////////////////////// SHIFTER TESTING /////////////////////
+      state.SHIFTLEFT: // Test Case 11 (Shift Left Operator)
+        /* a = 16b1010010110100101
+           b = 16b1000010001000100 b[3:0] = 4
+      result = 16b0101101001010000 < -- a << 4
+        */
+        seg2.char = 5b10;   // display 'S' to represent Shifter mode
+        seg1.char = 5d8;   // display '1'
+        seg0.char = 5d8;   // display '1' --> testcase '11'
+        alu_.a = 16b1010010110100101;
+        alu_.b = 16b1000010001000100;
+        alu_.alufn = Alufn.SHL;
+        result = alu_.result_;
+        io_led[1:0] = {result[15-:8],result[7-:8]};
+        if (counter.q[T] && result == 16b0101101001010000) {
+          state.d = state.SHIFTRIGHT;       // SUCCESS
+          counter.d=0;
+        }
+        else if (counter.q[T] && result != 16b0101101001010000) {
+          state.d = state.SHIFTERROR;  // fail
+          counter.d=0;
+        }
+
+      state.SHIFTRIGHT: // Test Case 12 (Shift Right Operator)
+        /* a = 16b1010010110100101
+           b = 16b1000010001000100 b[3:0] = 4
+      result = 16b0000101001011010 < -- a >> 4
+        */
+        seg2.char = 5b10;   // display 'S' to represent Shifter mode
+        seg1.char = 5d8;   // display '1'
+        seg0.char = 5d9;   // display '2' --> testcase '12'
+        alu_.a = 16b1010010110100101;
+        alu_.b = 16b1000010001000100;
+        alu_.alufn = Alufn.SHR;
+        result = alu_.result_;
+        io_led[1:0] = {result[15-:8],result[7-:8]};
+        if (counter.q[T] && result == 16b0000101001011010) {
+          state.d = state.SRA;              // SUCCESS
+          counter.d=0;
+        }
+        else if (counter.q[T] && result != 16b0000101001011010) {
+          state.d = state.SHIFTERROR;  // fail
+          counter.d=0;
+        }
+
+      state.SRA: // Test Case 13 (Shift Right With Arithmetic)
+        /* a = 16b1010010110100101
+           b = 16b1000010001000100 b[3:0] = 4
+      result = 16b1111101001011010 < -- a >>> 4
+        */
+        seg2.char = 5b10;   // display 'S' to represent Shifter mode
+        seg1.char = 5d8;   // display '1'
+        seg0.char = 5d10;   // display '3' --> testcase '13'
+        alu_.a = 16b1010010110100101;
+        alu_.b = 16b1000010001000100;
+        alu_.alufn = Alufn.SRA;
+        result = alu_.result_;
+        io_led[1:0] = {result[15-:8],result[7-:8]};
+        if (counter.q[T] && result == 16b1111101001011010) {
+          state.d = state.CMPEQ1;            // SUCCESS
+          counter.d=0;
+        }
+        else if (counter.q[T] && result != 16b1111101001011010) {
+          state.d = state.SHIFTERROR;  // fail
+          counter.d=0;
+        }
+
+////////////////////// END OF SHIFT TESTING /////////////////////
+
+////////////////////// COMPARE TESTING /////////////////////
+      state.CMPEQ1: // Test Case 14 (COMPARE A == B --> RESULT = 1)
+        /*
+           a = 16b1010010110100101;
+           b = 16b1010010110100101;
+      return = 16b1; <-- a == b;
+        */
+        seg2.char = 5b11;   // display 'c' to represent Compare mode
+        seg1.char = 5d8;   // display '1'
+        seg0.char = 5d11;   // display '4' --> testcase '14'
+        alu_.a = 16b1010010110100101;
+        alu_.b = 16b1010010110100101;
+        alu_.alufn = Alufn.CMPEQ;
+        result = alu_.result_;
+        io_led[1:0] = {result[15-:8],result[7-:8]};
+        if (counter.q[T] && result == 16b1) {
+          state.d = state.CMPEQ2;          // SUCCESS
+          counter.d=0;
+        }
+        else if (counter.q[T] && result != 16b1) {
+          state.d = state.CMPERROR;  // fail
+          counter.d=0;
+        }
+
+      state.CMPEQ2: // Test Case 15 (COMPARE A == B --> RESULT = 0)
+        /*
+           a = 16b1010010110100100;
+           b = 16b1010010110100101;
+      return = 16b0; <-- a != b;
+        */
+        seg2.char = 5b11;   // display 'c' to represent Compare mode
+        seg1.char = 5d8;   // display '1'
+        seg0.char = 5d12;   // display '5' --> testcase '15'
+        alu_.alufn = Alufn.CMPEQ;
+        alu_.a = 16b1010010110100100;
+        alu_.b = 16b1010010110100101;
+        result = alu_.result_;
+        io_led[1:0] = {result[15-:8],result[7-:8]};
+        if (counter.q[T] && result == 16b0) {
+          state.d = state.CMPLT1;          // SUCCESS
+          counter.d=0;
+        }
+        else if (counter.q[T] && result != 16b0) {
+          state.d = state.CMPERROR;  // fail
+          counter.d=0;
+        }
+
+      state.CMPLT1: // Test Case 16 (COMPARE A < B --> RESULT = 1)
+        /*
+           a = 16b1010010110100100;
+           b = 16b1010010110100101;
+      return = 16b1; <-- a < b;
+        */
+        seg2.char = 5b11;   // display 'c' to represent Compare mode
+        seg1.char = 5d8;   // display '1'
+        seg0.char = 5d13;   // display '6' --> testcase '16'
+        alu_.a = 16b1010010110100100;
+        alu_.b = 16b1010010110100101;
+        alu_.alufn = Alufn.CMPLT;
+        result = alu_.result_;
+        io_led[1:0] = {result[15-:8],result[7-:8]};
+        if (counter.q[T] && result == 16b1) {
+          state.d = state.CMPLT2;          // SUCCESS
+          counter.d=0;
+        }
+        else if (counter.q[T] && result != 16b1) {
+          state.d = state.CMPERROR;  // fail
+          counter.d=0;
+        }
+
+      state.CMPLT2: // Test Case 17 (COMPARE A < B --> RESULT = 0)
+        /*
+           a = 16b0111111111111111;
+           b = 16b1010010110100100;
+      return = 16b1; <-- a !< b;
+        */
+        seg2.char = 5b11;   // display 'c' to represent Compare mode
+        seg1.char = 5d8;   // display '1'
+        seg0.char = 5d14;   // display '7' --> testcase '17'
+        alu_.alufn = Alufn.CMPLT;
+        alu_.a = 16b0111111111111111;
+        alu_.b = 16b0010010110100100;
+        result = alu_.result_;
+        io_led[1:0] = {result[15-:8],result[7-:8]};
+        if (counter.q[T] && result == 16b0) {
+          state.d = state.CMPLE1;          // SUCCESS
+          counter.d=0;
+        }
+        else if (counter.q[T] && result != 16b0) {
+          state.d = state.CMPERROR;  // fail
+          counter.d=0;
+        }
+
+      state.CMPLE1: // Test Case 18 (COMPARE A <= B --> RESULT = 1 (A == B))
+        /*
+           a = 16b1010010110100101;
+           b = 16b1010010110100101;
+      return = 16b1; <-- a !< b;
+        */
+        seg2.char = 5b11;   // display 'c' to represent Compare mode
+        seg1.char = 5d8;   // display '1'
+        seg0.char = 5d15;   // display '8' --> testcase '18'
+        alu_.a = 16b1010010110100101;
+        alu_.b = 16b1010010110100101;
+        alu_.alufn = Alufn.CMPLE;
+        result = alu_.result_;
+        io_led[1:0] = {result[15-:8],result[7-:8]};
+        if (counter.q[T] && result == 16b1) {
+          state.d = state.CMPLE2;          // SUCCESS
+          counter.d=0;
+        }
+        else if (counter.q[T] && result != 16b1) {
+          state.d = state.CMPERROR;  // fail
+          counter.d=0;
+        }
+
+      state.CMPLE2: // Test Case 19 (COMPARE A <= B --> RESULT = 1 (A < B))
+        /*
+           a = 16b1010010110100100;
+           b = 16b1010010110100101;
+      return = 16b1; <-- a !< b;
+        */
+        seg2.char = 5b11;   // display 'c' to represent Compare mode
+        seg1.char = 5d8;   // display '1'
+        seg0.char = 5d16;   // display '9' --> testcase '19'
+        alu_.a = 16b1010010110100100;
+        alu_.b = 16b1010010110100101;
+        alu_.alufn = Alufn.CMPLE;
+        result = alu_.result_;
+        io_led[1:0] = {result[15-:8],result[7-:8]};
+        if (counter.q[T] && result == 16b1) {
+          state.d = state.CMPLE3;          // SUCCESS
+          counter.d=0;
+        }
+        else if (counter.q[T] && result != 16b1) {
+          state.d = state.CMPERROR;  // fail
+          counter.d=0;
+        }
+
+      state.CMPLE3: // Test Case 20 (COMPARE A <= B --> RESULT = 0 (A > B))
+        /*
+           a = 16b0010010110100101;
+           b = 16b1010010110100100;
+      return = 16b1; <-- a !< b;
+        */
+        seg2.char = 5b11;   // display 'c' to represent Compare mode
+        seg1.char = 5d9;   // display '2'
+        seg0.char = 5d7;   // display '0' --> testcase '20'
+        alu_.a = 16b0010010110100101;
+        alu_.b = 16b1010010110100100;
+        alu_.alufn = Alufn.CMPLE;
+        result = alu_.result_;
+        io_led[1:0] = {result[15-:8],result[7-:8]};
+        if (counter.q[T] && result == 16b0) {
+          state.d = state.DONE;          // SUCCESS
+          counter.d=0;
+        }
+        else if (counter.q[T] && result != 16b0) {
+          state.d = state.CMPERROR;  // fail
+          counter.d=0;
+        }
+
+////////////////////// END OF COMPARE TESTING /////////////////////
+
+      state.DONE:
+        seg3.char = 5d17;   // display 'c' to represent Compare mode
+        seg2.char = 5d7;   // display 'c' to represent Compare mode
+        seg1.char = 5d18;   // display '2'
+        seg0.char = 5d19;   // display '0' --> testcase '20'
+        if (io_button[0]) state.d = state.MANUAL;
+
+////////////////////// ERROR CASES /////////////////////
+      state.ADDERERROR: // Error in Adder module
+        seg3.char = 4b100; // display 'E'
+        seg2.char = 4b101;  // display 'r'
+        seg1.char = 4b101;  // display 'r' --> forms "Err"
+        seg0.char = 4b0;    // display 'A' --> forms "ErrA" --> Error in Adder Module
+        if (io_button[0]) state.d = state.MANUAL;
+
+      state.BOOLERROR: // Error in Adder module
+        seg3.char = 4b100; // display 'E'
+        seg2.char = 4b101;  // display 'r'
+        seg1.char = 4b101;  // display 'r' --> forms "Err"
+        seg0.char = 4b1;    // display 'b' --> forms "Errb" --> Error in Boolean Module
+        if (io_button[0]) state.d = state.MANUAL;
+
+      state.SHIFTERROR: // Error in Adder module
+        seg3.char = 4b100; // display 'E'
+        seg2.char = 4b101;  // display 'r'
+        seg1.char = 4b101;  // display 'r' --> forms "Err"
+        seg0.char = 4b10;    // display 'A' --> forms "ErrS" --> Error in Shifter Module
+        if (io_button[0]) state.d = state.MANUAL;
+
+      state.CMPERROR: // Error in Adder module
+        seg3.char = 4b100; // display 'E'
+        seg2.char = 4b101;  // display 'r'
+        seg1.char = 4b101;  // display 'r' --> forms "Err"
+        seg0.char = 4b11;    // display 'C' --> forms "ErrC" --> Error in Compare Module
+        if (io_button[0]) state.d = state.MANUAL;
+    }
+////////////////////// LIGHT UP THEM SEGMENT LED SCREENS /////////////////////
+    case(ctr.value){
+      0:
+        io_seg = ~seg0.segs;
+        io_sel = ~4b1;
+      1:
+        io_seg = ~seg1.segs;
+        io_sel = ~4b10;
+      2:
+        io_seg = ~seg2.segs;
+        io_sel = ~4b100;
+      3:
+        io_seg = ~seg3.segs;
+        io_sel = ~4b1000;
+      default:
+        io_seg =~seg0.segs;
+        io_sel = ~4b1;
+
+    }
+  }
+}

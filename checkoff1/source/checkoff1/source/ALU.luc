@@ -1,0 +1,75 @@
+global Inst{               // create global variables for our ALU functions
+  // these are alufn[5:4] to select our choice for a makeshift MUX4
+  const ADDER   = 2b00;  
+  const BOOLEAN = 2b01;
+  const SHIFTER = 2b10;
+  const COMPARE = 2b11;
+}
+
+module alu (
+// intiailize the inputs for our ALU
+    input a[16],
+    input b[16],
+    input alufn[6],
+
+// initialize the outputs from our ALU    
+    output result_[16],
+    output z,
+    output v,
+    output n
+) {
+  
+// initialize the functions found in our ALU
+  adder adder_;
+  boolean boolean_;
+  shifter shifter_;
+  compare compare_;
+
+  
+  
+  always {
+    // assigning inputs to ADDER
+    adder_.a = a;
+    adder_.b = b;
+    adder_.alufn = alufn;
+    
+    // assigning inputs to BOOLEAN
+    boolean_.a = a;
+    boolean_.b = b;
+    boolean_.alufn = alufn;
+    
+    // assigning inputs to SHIFTER
+    shifter_.a = a;
+    shifter_.b = b;
+    shifter_.alufn = alufn;
+    
+    // assigning inputs to COMPARE
+    compare_.alufn = alufn;
+    compare_.z = adder_.z;
+    compare_.v = adder_.v;
+    compare_.n = adder_.n;
+    
+    // creating a makeshift mux4 for our alu functions
+    // 
+    case(alufn[5:4]){
+      Inst.ADDER:
+        result_ = adder_.sum_;
+        
+      Inst.BOOLEAN:
+        result_ = boolean_.bool_;
+        
+      Inst.SHIFTER:
+        result_ = shifter_.shift_;
+        
+      Inst.COMPARE:
+        result_ = compare_.cmp_;
+      
+      default:
+        result_ = 16b0;
+            }
+    z = adder_.z;
+    v = adder_.v;
+    n = adder_.n;
+  
+  }
+}
