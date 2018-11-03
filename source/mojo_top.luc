@@ -13,7 +13,7 @@ global Alufn {
   const CMPEQ = 6b110011;
   const CMPLT = 6b110101;
   const CMPLE = 6b110111;
-  
+
   const CORRECT = 8d100;
   const WRONG   = 8d50;
 }
@@ -39,92 +39,92 @@ module mojo_top (
 
     input a_[16]            // 16-bit a input that comes from the strip board
       ) {
-  
+
   sig rst;                  // reset signal
-  
+
   .clk(clk) {
     // The reset conditioner is used to synchronize the reset signal to the FPGA
     // clock. This ensures the entire FPGA comes out of reset at the same time.
     reset_conditioner reset_cond;
     edge_detector edge_detector(#RISE(1), #FALL(0)); //edge detector to detect rising edge of state
     .rst(rst){
-      dff counter[26]; //counter used to cycle through different states      
-      counter ctr (#SIZE(3), #DIV(16));//counter to light up led segments 
-      
+      dff counter[26]; //counter used to cycle through different states
+      counter ctr (#SIZE(3), #DIV(16));//counter to light up led segments
+
 ////////////////////// CREATE FSM FOR ALU TESTING /////////////////////
-      fsm state = {MANUAL, COMPUTE, 
+      fsm state = {MANUAL, COMPUTE,
         ADDERSUM1, ADDERSUM1OF, ADDERSUB1, ADDERSUB1OF, ADDERMUL1, ADDERMOD1,
-        BOOLAND, BOOLOR, BOOLXOR, BOOLLDR, 
+        BOOLAND, BOOLOR, BOOLXOR, BOOLLDR,
         CMPEQ1, CMPEQ2, CMPLT1, CMPLT2, CMPLE1, CMPLE2, CMPLE3,
         SHIFTLEFT, SHIFTRIGHT, SRA,
         ADDERERROR, BOOLERROR, SHIFTERROR, CMPERROR,
         DONE};
     }
   }
-  
+
   sig alufn[6];  // mode selector
   sig a[16];    // 16-bit a input -- used for self-testing case
   sig b[16];    // 16-bit b input
   sig result[16];
   sig result_of[1];  // return a 17 bit result. MSB of this result is used only for overflow test cases
-  
+
   const T = 25;    // time interval between cases
-  
+
   seven_seg seg0; // the most right seg
   seven_seg seg1; // the one left of the most right seg
   seven_seg seg2; // the one left of the left of the most right seg :)
   seven_seg seg3; // the left most of the led segments
 ////////////////////// INSTANTIATE NECESSARY MODULES /////////////////////
-  alu alu_;  
-   
-  
+  alu alu_;
+
+
   always {
     reset_cond.in = ~rst_n; // input raw inverted reset signal
     rst = reset_cond.out;   // conditioned reset
-    
+
     led = 8h00;             // turn LEDs off
     spi_miso = bz;          // not using SPI
     spi_channel = bzzzz;    // not using flags
     avr_rx = bz;            // not using serial port
-    
+
     io_led = 3x{{8h00}};    // turn LEDs off
     io_seg = 8hff;          // turn segments off
     io_sel = 4hf;           // select no digits
-    
+
 ////////////////////// INSTANTIATE NECESSARY IO VALUES /////////////////////
     a     = a_;                      // sig a will receive its values from the external Stripboard
-    b     = c{io_dip[1],io_dip[0]};  // instantiate sig b with the 2 group of right dip switches    
+    b     = c{io_dip[1],io_dip[0]};  // instantiate sig b with the 2 group of right dip switches
     alufn = io_dip[2][7-:6];          // assign combination of ALUFN to ALU module (the first group of dip switches on the left)
- 
+
 ////////////////////// ASSIGN NECESSARY MODULE ALU VALUES /////////////////////
-    counter.d = counter.q + 1; // the incr of counter is for SELF-TESTING  
-    edge_detector.in = counter.q[T]; // edge detector detects rising edge of counter 
+    counter.d = counter.q + 1; // the incr of counter is for SELF-TESTING
+    edge_detector.in = counter.q[T]; // edge detector detects rising edge of counter
     alu_.a = a;
     alu_.b = b;
     alu_.alufn = alufn;
 
-    
+
 ////////////////////// ASSIGN CONDITIONS FOR LED OUTPUT /////////////////////
     seg3.char = 5b0110; // display nothing
     seg2.char = 5b0110; // display nothing
     seg1.char = 5b0110; // display nothing
-    seg0.char = 5b0110; // display nothing    
+    seg0.char = 5b0110; // display nothing
 
     case (state.q){
 ////////////////////// MANUAL TESTING /////////////////////
-      state.MANUAL: 
-        
+      state.MANUAL:
+
         io_led[1:0] = io_dip[1:0];
         io_led[2][7:2] = io_dip[2][7:2];                // first row of LED will reflect the ALUFN order
-        
+
         if (alufn[5:4] == 2b00) seg0.char = 4b0;        // show 'A' if alufn[5:4] = 00
         else if (alufn[5:4] == 2b01) seg0.char = 4b1;   // show 'b' if alufn[5:4] = 01
         else if (alufn[5:4] == 2b10) seg0.char = 4b10;  // show 'S' if alufn[5:4] = 10
         else if (alufn[5:4] == 2b11) seg0.char = 4b11;  // show 'c' if alufn[5:4] = 11
-        
+
         if(io_button[3]) state.d = state.COMPUTE;
         else if (io_button[2]) state.d = state.ADDERSUM1;
-        
+
       state.COMPUTE:
         alu_.a = a;
         alu_.b = b;
@@ -133,7 +133,7 @@ module mojo_top (
         result = alu_.result_;                          // compute the A and B inputs using the ALU operations, depending on the ALUFN combination
         io_led[1:0] = {result[15-:8], result[7-:8]};    // override previous LED methods. will show the result of the ALU operations on IO Shield LED
         io_led[2][7:2] = io_dip[2][7:2];
-        
+
         if (alufn[5:4] == 2b00) seg0.char = 4b0;        // show 'A' if alufn[5:4] = 00
         else if (alufn[5:4] == 2b01) seg0.char = 4b1;   // show 'b' if alufn[5:4] = 01
         else if (alufn[5:4] == 2b10) seg0.char = 4b10;  // show 'S' if alufn[5:4] = 10
@@ -141,14 +141,14 @@ module mojo_top (
 
         if(io_button[0]) state.d = state.MANUAL;
         else if(io_button[2]) state.d = state.ADDERSUM1;
-        
+
 ////////////////////// AUTOMATIC SELF-TESTING /////////////////////
 
       /*
        * USE Alufn.CORRECT for all the correct test case.
        * USE Alufn.WRONG to test for the error test cases!
        */
-        
+
 ////////////////////// TEST ADDER MODULE /////////////////////
       state.ADDERSUM1: // Test Case 1 (Normal sum) a = 100 b = 101 --> a + b = 8d201
         seg2.char = 5b0;   // display 'A' to represent Adder mode
@@ -168,7 +168,7 @@ module mojo_top (
           state.d = state.ADDERERROR;  // fail
           counter.d=0;
         }
-        
+
       state.ADDERSUM1OF: // Test Case 2 (Overflow sum)
         /* a =  16b1000000000000000
            b =  16b1000000000000001
@@ -193,7 +193,7 @@ module mojo_top (
           state.d = state.ADDERERROR;  // fail
           counter.d=0;
         }
-        
+
       state.ADDERSUB1:  // Test Case 3 (Normal subtraction)
         /* a = Alufn.CORRECT = 100
            b = 50
@@ -215,7 +215,7 @@ module mojo_top (
           state.d = state.ADDERERROR;  // fail
           counter.d=0;
         }
-        
+
       state.ADDERSUB1OF: // Test Case 4 (Subtraction Overflow)
         /* a = 16b100000000000000
            b = 16b000000000000001
@@ -261,7 +261,7 @@ module mojo_top (
           state.d = state.ADDERERROR;  // fail
           counter.d=0;
         }
-            
+
       state.ADDERMOD1: // Test Case 6 (Normal Modular)
         /* a = 8d123
            b = 8d31
@@ -279,15 +279,15 @@ module mojo_top (
           state.d = state.BOOLAND;          // SUCCESS
           counter.d=0;
         }
-          
+
         else if (counter.q[T] && result != 8d30) {
           state.d = state.ADDERERROR;  // fail
           counter.d=0;
         }
-      
-        
+
+
 ////////////////////// END OF ADDER TESTING /////////////////////
-        
+
 ////////////////////// BOOLEAN TESTING /////////////////////
       state.BOOLAND: // Test Case 7 (Boolean AND Operator)
         /* a = 16b1010010110100101
@@ -310,7 +310,7 @@ module mojo_top (
           state.d = state.BOOLERROR;  // fail
           counter.d=0;
         }
-        
+
       state.BOOLOR: // Test Case 8 (Boolean OR Operator)
         /* a = 16b1010010110100101
            b = 16b1000010001000100
@@ -332,7 +332,7 @@ module mojo_top (
           state.d = state.BOOLERROR;  // fail
           counter.d=0;
         }
-      
+
       state.BOOLXOR: // Test Case 9 (Boolean XOR Operator)
         /* a = 16b1010010110100101
            b = 16b1000010001000100
@@ -378,7 +378,7 @@ module mojo_top (
         }
 
 ////////////////////// END OF BOOLEAN TESTING /////////////////////
-        
+
 ////////////////////// SHIFTER TESTING /////////////////////
       state.SHIFTLEFT: // Test Case 11 (Shift Left Operator)
         /* a = 16b1010010110100101
@@ -401,7 +401,7 @@ module mojo_top (
           state.d = state.SHIFTERROR;  // fail
           counter.d=0;
         }
-        
+
       state.SHIFTRIGHT: // Test Case 12 (Shift Right Operator)
         /* a = 16b1010010110100101
            b = 16b1000010001000100 b[3:0] = 4
@@ -447,10 +447,10 @@ module mojo_top (
         }
 
 ////////////////////// END OF SHIFT TESTING /////////////////////
-        
-////////////////////// COMPARE TESTING /////////////////////  
+
+////////////////////// COMPARE TESTING /////////////////////
       state.CMPEQ1: // Test Case 14 (COMPARE A == B --> RESULT = 1)
-        /* 
+        /*
            a = 16b1010010110100101;
            b = 16b1010010110100101;
       return = 16b1; <-- a == b;
@@ -471,9 +471,9 @@ module mojo_top (
           state.d = state.CMPERROR;  // fail
           counter.d=0;
         }
-      
+
       state.CMPEQ2: // Test Case 15 (COMPARE A == B --> RESULT = 0)
-        /* 
+        /*
            a = 16b1010010110100100;
            b = 16b1010010110100101;
       return = 16b0; <-- a != b;
@@ -496,7 +496,7 @@ module mojo_top (
         }
 
       state.CMPLT1: // Test Case 16 (COMPARE A < B --> RESULT = 1)
-        /* 
+        /*
            a = 16b1010010110100100;
            b = 16b1010010110100101;
       return = 16b1; <-- a < b;
@@ -519,10 +519,10 @@ module mojo_top (
         }
 
       state.CMPLT2: // Test Case 17 (COMPARE A < B --> RESULT = 0)
-        /* 
+        /*
            a = 16b0111111111111111;
            b = 16b1010010110100100;
-      return = 16b1; <-- a !< b; 
+      return = 16b1; <-- a !< b;
         */
         seg2.char = 5b11;   // display 'c' to represent Compare mode
         seg1.char = 5d8;   // display '1'
@@ -542,10 +542,10 @@ module mojo_top (
         }
 
       state.CMPLE1: // Test Case 18 (COMPARE A <= B --> RESULT = 1 (A == B))
-        /* 
+        /*
            a = 16b1010010110100101;
            b = 16b1010010110100101;
-      return = 16b1; <-- a !< b; 
+      return = 16b1; <-- a !< b;
         */
         seg2.char = 5b11;   // display 'c' to represent Compare mode
         seg1.char = 5d8;   // display '1'
@@ -565,10 +565,10 @@ module mojo_top (
         }
 
       state.CMPLE2: // Test Case 19 (COMPARE A <= B --> RESULT = 1 (A < B))
-        /* 
+        /*
            a = 16b1010010110100100;
            b = 16b1010010110100101;
-      return = 16b1; <-- a !< b; 
+      return = 16b1; <-- a !< b;
         */
         seg2.char = 5b11;   // display 'c' to represent Compare mode
         seg1.char = 5d8;   // display '1'
@@ -587,11 +587,11 @@ module mojo_top (
           counter.d=0;
         }
 
-      state.CMPLE3: // Test Case 19 (COMPARE A <= B --> RESULT = 0 (A > B))
-        /* 
+      state.CMPLE3: // Test Case 20 (COMPARE A <= B --> RESULT = 0 (A > B))
+        /*
            a = 16b0010010110100101;
            b = 16b1010010110100100;
-      return = 16b1; <-- a !< b; 
+      return = 16b1; <-- a !< b;
         */
         seg2.char = 5b11;   // display 'c' to represent Compare mode
         seg1.char = 5d9;   // display '2'
@@ -611,36 +611,36 @@ module mojo_top (
         }
 
 ////////////////////// END OF COMPARE TESTING /////////////////////
-        
+
       state.DONE:
         seg3.char = 5d17;   // display 'c' to represent Compare mode
         seg2.char = 5d7;   // display 'c' to represent Compare mode
         seg1.char = 5d18;   // display '2'
         seg0.char = 5d19;   // display '0' --> testcase '20'
         if (io_button[0]) state.d = state.MANUAL;
-        
-////////////////////// ERROR CASES /////////////////////  
+
+////////////////////// ERROR CASES /////////////////////
       state.ADDERERROR: // Error in Adder module
         seg3.char = 4b100; // display 'E'
         seg2.char = 4b101;  // display 'r'
         seg1.char = 4b101;  // display 'r' --> forms "Err"
         seg0.char = 4b0;    // display 'A' --> forms "ErrA" --> Error in Adder Module
         if (io_button[0]) state.d = state.MANUAL;
-        
+
       state.BOOLERROR: // Error in Adder module
         seg3.char = 4b100; // display 'E'
         seg2.char = 4b101;  // display 'r'
         seg1.char = 4b101;  // display 'r' --> forms "Err"
         seg0.char = 4b1;    // display 'b' --> forms "Errb" --> Error in Boolean Module
         if (io_button[0]) state.d = state.MANUAL;
-        
+
       state.SHIFTERROR: // Error in Adder module
         seg3.char = 4b100; // display 'E'
         seg2.char = 4b101;  // display 'r'
         seg1.char = 4b101;  // display 'r' --> forms "Err"
         seg0.char = 4b10;    // display 'A' --> forms "ErrS" --> Error in Shifter Module
         if (io_button[0]) state.d = state.MANUAL;
-        
+
       state.CMPERROR: // Error in Adder module
         seg3.char = 4b100; // display 'E'
         seg2.char = 4b101;  // display 'r'
@@ -648,9 +648,9 @@ module mojo_top (
         seg0.char = 4b11;    // display 'C' --> forms "ErrC" --> Error in Compare Module
         if (io_button[0]) state.d = state.MANUAL;
     }
-////////////////////// LIGHT UP THEM SEGMENT LED SCREENS /////////////////////   
+////////////////////// LIGHT UP THEM SEGMENT LED SCREENS /////////////////////
     case(ctr.value){
-      0: 
+      0:
         io_seg = ~seg0.segs;
         io_sel = ~4b1;
       1:
@@ -665,7 +665,7 @@ module mojo_top (
       default:
         io_seg =~seg0.segs;
         io_sel = ~4b1;
-        
+
     }
   }
 }
