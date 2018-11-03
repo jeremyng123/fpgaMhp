@@ -24,15 +24,6 @@ module mojo_top (
     // The reset conditioner is used to synchronize the reset signal to the FPGA
     // clock. This ensures the entire FPGA comes out of reset at the same time.
     reset_conditioner reset_cond;
-    .rst(rst){
-      dff counter[30]; //counter used to cycle through different states      
-      counter ctr (#SIZE(3), #DIV(16));//counter to light up led segments 
-     //defining state machine states
-      fsm state = {IDLE, ADDERTEST1,ADDERTEST1A, ADDERTEST2A,ADDERTEST2,ADDERTEST3,ADDERTEST4,ADDERERRORTEST, ADDERERROR,
-      BOOLEANTEST1, BOOLEANTEST2,BOOLEANTEST3, BOOLEANTEST4, BOOLEANERRORTEST,BOOLEANERROR, 
-        SHIFTTEST1,SHIFTTEST2,SHIFTTEST3, SHIFTERRORTEST,SHIFTERROR,
-        COMPTEST1, COMPTEST2,COMPTEST3,COMPTEST4,COMPTEST5,COMPTEST6,COMPTEST7, COMPERRORTEST, COMPERROR, END};
-    }
   }
   
   always {
@@ -47,8 +38,5 @@ module mojo_top (
     io_led = 3x{{8h00}};    // turn LEDs off
     io_seg = 8hff;          // turn segments off
     io_sel = 4hf;           // select no digits
-    
-////////////////////// INSTANTIATE NECESSARY IO VALUES /////////////////////
-    
   }
 }

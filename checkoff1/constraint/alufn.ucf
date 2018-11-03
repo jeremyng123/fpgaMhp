@@ -1,0 +1,3 @@
+// input variables
+NET "sum" LOC = P51 | IOSTANDARD = LVTTL;
+NET "cout" LOC = p41 | IO STANDARD = LVTTL;
